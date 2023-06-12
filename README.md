@@ -1,4 +1,4 @@
-## Corretto JDK
+## Corretto 21
 
 Amazon Corretto is a no-cost, multiplatform,
 production-ready distribution of the Open Java Development Kit (OpenJDK).
@@ -6,7 +6,7 @@ Corretto is used internally at Amazon for production services.
 With Corretto, you can develop and run Java applications
 on operating systems such as Linux, Windows, and macOS.
 
-This repository is used to track [OpenJDK upstream tip](https://github.com/openjdk/jdk).
+This repository is used to track [OpenJDK 21](https://github.com/openjdk/jdk21).
 Please look at the branches section for more information on Feature Releases.
 
 Documentation is available at [https://docs.aws.amazon.com/corretto](https://docs.aws.amazon.com/corretto).
@@ -18,10 +18,7 @@ Please read these files: "LICENSE", "ADDITIONAL_LICENSE_INFO", "ASSEMBLY_EXCEPTI
 ### Branches
 
 _develop_
-: The default branch. The branch that consumes development and patches to upstream jdk. Corretto builds are generated from this branch.
-
-_upstream-jdk_
-: The branch is similar to master at [openjdk/jdk](https://github.com/openjdk/jdk). This branch merges into develop.
+: The default branch. The branch that consumes development and patches to upstream [openjdk/jdk21](https://github.com/openjdk/jdk21). Corretto builds are generated from this branch.
 
 ### OpenJDK Readme
 ```

@@ -51,7 +51,7 @@ allprojects {
         buildRoot = file("$buildDir/buildRoot")
         distributionDir = file("$buildDir/distributions")
         packageInfo = [
-                url       : "https://github.com/corretto/corretto-jdk",
+                url       : "https://github.com/corretto/corretto-${project.version.major}",
                 vendor    : 'Amazon',
                 packager  : 'Amazon',
                 description  : 'Amazon Corretto\'s packaging of the runtime core elements of the OpenJDK code.',
@@ -91,8 +91,8 @@ allprojects {
                 '--with-jvm-features=zgc',
                 "--with-version-build=${project.version.build}",
                 '--with-version-pre=',
-                "--with-vendor-bug-url=https://github.com/corretto/corretto-jdk/issues/",
-                "--with-vendor-vm-bug-url=https://github.com/corretto/corretto-jdk/issues/",
+                "--with-vendor-bug-url=https://github.com/corretto/corretto-${project.version.major}/issues/",
+                "--with-vendor-vm-bug-url=https://github.com/corretto/corretto-${project.version.major}/issues/",
                 '--with-vendor-name=Amazon.com Inc.',
                 '--with-vendor-url=https://aws.amazon.com/corretto/',
                 "--with-vendor-version-string=Corretto-${project.version.full}"
