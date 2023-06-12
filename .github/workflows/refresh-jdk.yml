@@ -4,12 +4,12 @@ on:
     - cron: '0 8 * * *'
   workflow_dispatch:
 env:
-  UPSTREAM_REMOTE: https://github.com/openjdk/jdk.git
+  UPSTREAM_REMOTE: https://github.com/openjdk/jdk21
   LOCAL_BRANCH: develop
 jobs:
     refresh-jdk:
         runs-on: ubuntu-latest
-        name: "Update Corretto-jdk"
+        name: "Update Corretto-21"
         if: github.repository_owner == 'corretto'
         steps:
             - name: "Checkout code"
@@ -21,12 +21,12 @@ jobs:
               run: |
                 git config user.email "no-reply@amazon.com"
                 git config user.name "corretto-github-robot"
-            - name: "Merge openjdk/jdk:master to the corretto-jdk:develop"
+            - name: "Merge openjdk/jdk:master to the corretto-21:develop"
               run: |
                 git fetch $UPSTREAM_REMOTE master || exit 1
                 git merge -m "Merge upstream-jdk" FETCH_HEAD
             - name: "Update Corretto version"
               shell: bash
               run: bash ./.github/scripts/update-version.sh $UPSTREAM_REMOTE
-            - name: "Push to the corretto-jdk"
+            - name: "Push to the corretto-21"
               run: git push origin $LOCAL_BRANCH

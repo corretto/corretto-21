@@ -1,4 +1,4 @@
-rootProject.name = 'corretto-jdk'
+rootProject.name = 'corretto-21'
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
