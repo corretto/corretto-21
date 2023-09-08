@@ -47,7 +47,7 @@
 %endif
 # If we need to rev the package for something outside of what the
 # Corretto team is doing, we can define release_ext.
-# %global release_ext  1
+%global release_ext  0
 
 %global boot_jdk_major_version    $boot_jdk_major_version
 
