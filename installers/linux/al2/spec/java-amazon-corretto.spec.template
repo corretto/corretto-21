@@ -250,10 +250,10 @@ Amazon Corretto's packaging of the OpenJDK ${java_spec_version} jmods.
 # Bootstrap with Corretto 20
 %ifarch aarch64
 curl -L -o corretto.tar.gz https://corretto.aws/downloads/latest/amazon-corretto-20-aarch64-linux-jdk.tar.gz
-echo "505409e4f7e7c6c9aeae61af6a7df075298ceed70b1b562dc6d5f65588e12b1e  corretto.tar.gz" > corretto.tar.gz.sha256
+echo "4622de17e4afcb98e05f21a8be81d98500bbfc4a15c0c5a5420b39b816ba4f13  corretto.tar.gz" > corretto.tar.gz.sha256
 %else
 curl -L -o corretto.tar.gz https://corretto.aws/downloads/latest/amazon-corretto-20-x64-linux-jdk.tar.gz
-echo "32a6ce43ec641b0bd55d21bc4aa17995407581fb1c5142703805960aea95d2db  corretto.tar.gz" > corretto.tar.gz.sha256
+echo " 3b60fe04966d0aa762bf1fc2974ad239cf7ab887a657a9e7e3c75a9310e34db2 corretto.tar.gz" > corretto.tar.gz.sha256
 %endif
 sha256sum -c corretto.tar.gz.sha256
 mkdir -p corretto-bootstrap-jdk
