@@ -4,7 +4,7 @@ on:
     - cron: '0 8 * * *'
   workflow_dispatch:
 env:
-  UPSTREAM_REMOTE: https://github.com/openjdk/jdk21
+  UPSTREAM_REMOTE: https://github.com/openjdk/jdk21u
   LOCAL_BRANCH: develop
 jobs:
     refresh-jdk:
