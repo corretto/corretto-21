@@ -598,8 +598,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 
 # jdk_security
 
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
@@ -727,7 +725,6 @@ java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x
 sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
 java/util/concurrent/forkjoin/AsyncShutdownNow.java             8286352 linux-all,windows-x64
 java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-aarch64
-java/util/concurrent/SynchronousQueue/Fairness.java             8300663 generic-x64
 
 ############################################################################
 
