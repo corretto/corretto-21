@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +28,13 @@
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 
+/*
+ * This is a diagnostic heuristic that continuously runs collections
+ * cycles and adds every region with any garbage to the collection set.
+ */
 class ShenandoahAggressiveHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahAggressiveHeuristics();
+  ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info);
 
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                      RegionData* data, size_t size,

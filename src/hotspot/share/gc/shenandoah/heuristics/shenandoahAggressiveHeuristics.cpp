@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,8 @@
 #include "logging/logTag.hpp"
 #include "runtime/os.hpp"
 
-ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics() : ShenandoahHeuristics() {
+ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info) :
+  ShenandoahHeuristics(space_info) {
   // Do not shortcut evacuation
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold, 100);
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +26,12 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 
+#include "runtime/globals_extension.hpp"
+#include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "utilities/numberSeq.hpp"
 
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
@@ -36,10 +41,8 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   double sample(size_t allocated);
 
-  double instantaneous_rate(size_t allocated) const;
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
-
  private:
 
   double instantaneous_rate(double time, size_t allocated) const;
@@ -51,9 +54,20 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   TruncatedSeq _rate_avg;
 };
 
+/*
+ * The adaptive heuristic tracks the allocation behavior and average cycle
+ * time of the application. It attempts to start a cycle with enough time
+ * to complete before the available memory is exhausted. It errors on the
+ * side of starting cycles early to avoid allocation failures (degenerated
+ * cycles).
+ *
+ * This heuristic limits the number of regions for evacuation such that the
+ * evacuation reserve is respected. This helps it avoid allocation failures
+ * during evacuation. It preferentially selects regions with the most garbage.
+ */
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahAdaptiveHeuristics();
+  ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info);
 
   virtual ~ShenandoahAdaptiveHeuristics();
 
@@ -62,7 +76,7 @@ public:
                                                      size_t actual_free);
 
   void record_cycle_start();
-  void record_success_concurrent();
+  void record_success_concurrent(bool abbreviated);
   void record_success_degenerated();
   void record_success_full();
 
@@ -99,11 +113,12 @@ public:
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
 
+protected:
   ShenandoahAllocationRate _allocation_rate;
 
   // The margin of error expressed in standard deviations to add to our
   // average cycle time and allocation rate. As this value increases we
-  // tend to over estimate the rate at which mutators will deplete the
+  // tend to overestimate the rate at which mutators will deplete the
   // heap. In other words, erring on the side of caution will trigger more
   // concurrent GCs.
   double _margin_of_error_sd;
@@ -126,6 +141,8 @@ public:
   // establishes what is 'normal' for the application and is used as a
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
+
+  size_t min_free_threshold();
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
