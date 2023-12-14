@@ -41,13 +41,15 @@ class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
   size_t _success_concurrent_gcs;
   size_t _mixed_gcs;
-  size_t _abbreviated_cycles;
+  size_t _abbreviated_concurrent_gcs;
+  size_t _abbreviated_degenerated_gcs;
   size_t _success_old_gcs;
   size_t _interrupted_old_gcs;
   size_t _success_degenerated_gcs;
   // Written by control thread, read by mutators
   volatile size_t _success_full_gcs;
   volatile size_t _consecutive_young_gcs;
+  uint _consecutive_degenerated_gcs;
   size_t _alloc_failure_degenerated;
   size_t _alloc_failure_degenerated_upgrade_to_full;
   size_t _alloc_failure_full;
@@ -61,6 +63,7 @@ private:
   ShenandoahSharedFlag _in_shutdown;
   ShenandoahTracer* _tracer;
 
+
 public:
   ShenandoahCollectorPolicy();
 
@@ -69,11 +72,11 @@ public:
   void record_cycle_start();
 
   void record_mixed_cycle();
-  void record_abbreviated_cycle();
-  void record_success_concurrent(bool is_young);
+
+  void record_success_concurrent(bool is_young, bool is_abbreviated);
   void record_success_old();
   void record_interrupted_old();
-  void record_success_degenerated(bool is_young);
+  void record_success_degenerated(bool is_young, bool is_abbreviated);
   void record_success_full();
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
   void record_alloc_failure_to_full();
@@ -99,6 +102,13 @@ public:
   inline size_t consecutive_young_gc_count() const {
     return _consecutive_young_gcs;
   }
+
+  inline size_t consecutive_degenerated_gc_count() const {
+    return _consecutive_degenerated_gcs;
+  }
+
+private:
+  void update_young(bool is_young);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP

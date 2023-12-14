@@ -82,6 +82,8 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
   bool is_thread_safe() { return true; }
 };
 
+// Copy the write-version of the card-table into the read-version, clearing the
+// write-copy.
 class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
  private:
   ShenandoahHeap* _heap;
@@ -90,9 +92,8 @@ class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
   ShenandoahMergeWriteTable() : _heap(ShenandoahHeap::heap()), _scanner(_heap->card_scan()) {}
 
   virtual void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_old()) {
-      _scanner->merge_write_table(r->bottom(), ShenandoahHeapRegion::region_size_words());
-    }
+    assert(r->is_old(), "Don't waste time doing this for non-old regions");
+    _scanner->merge_write_table(r->bottom(), ShenandoahHeapRegion::region_size_words());
   }
 
   virtual bool is_thread_safe() override {
@@ -110,9 +111,8 @@ class ShenandoahSquirrelAwayCardTable: public ShenandoahHeapRegionClosure {
     _scanner(_heap->card_scan()) {}
 
   void heap_region_do(ShenandoahHeapRegion* region) {
-    if (region->is_old()) {
-      _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
-    }
+    assert(region->is_old(), "Don't waste time doing this for non-old regions");
+    _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
   }
 
   bool is_thread_safe() { return true; }
@@ -201,10 +201,9 @@ void ShenandoahGeneration::swap_remembered_set() {
   heap->old_generation()->parallel_heap_region_iterate(&task);
 }
 
-// If a concurrent cycle fails _after_ the card table has been swapped we need to update the read card
-// table with any writes that have occurred during the transition to the degenerated cycle. Without this,
-// newly created objects which are only referenced by old objects could be lost when the remembered set
-// is scanned during the degenerated mark.
+// Copy the write-version of the card-table into the read-version, clearing the
+// write-version. The work is done at a safepoint and in parallel by the GC
+// worker threads.
 void ShenandoahGeneration::merge_write_table() {
   // This should only happen for degenerated cycles
   ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -572,7 +571,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
           if (remnant_size > ShenandoahHeap::min_fill_size()) {
             ShenandoahHeap::fill_with_object(original_top, remnant_size);
             // Fill the remnant memory within this region to assure no allocations prior to promote in place.  Otherwise,
-            // newly allocated objects will not be parseable when promote in place tries to register them.  Furthermore, any
+            // newly allocated objects will not be parsable when promote in place tries to register them.  Furthermore, any
             // new allocations would not necessarily be eligible for promotion.  This addresses both issues.
             r->set_top(r->end());
             promote_in_place_pad += remnant_size * HeapWordSize;
@@ -734,7 +733,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       if (is_global()) {
         // We have just chosen a collection set for a global cycle. The mark bitmap covering old regions is complete, so
         // the remembered set scan can use that to avoid walking into garbage. When the next old mark begins, we will
-        // use the mark bitmap to make the old regions parseable by coalescing and filling any unmarked objects. Thus,
+        // use the mark bitmap to make the old regions parsable by coalescing and filling any unmarked objects. Thus,
         // we prepare for old collections by remembering which regions are old at this time. Note that any objects
         // promoted into old regions will be above TAMS, and so will be considered marked. However, free regions that
         // become old after this point will not be covered correctly by the mark bitmap, so we must be careful not to
@@ -761,7 +760,8 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     size_t young_cset_regions, old_cset_regions;
 
     // We are preparing for evacuation.  At this time, we ignore cset region tallies.
-    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions);
+    size_t first_old, last_old, num_old;
+    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     heap->free_set()->rebuild(young_cset_regions, old_cset_regions);
   }
   heap->set_evacuation_reserve_quantities(false);
@@ -1016,10 +1016,5 @@ void ShenandoahGeneration::decrease_capacity(size_t decrement) {
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
   heuristics()->record_success_concurrent(abbreviated);
-  ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young());
-}
-
-void ShenandoahGeneration::record_success_degenerated() {
-  heuristics()->record_success_degenerated();
-  ShenandoahHeap::heap()->shenandoah_policy()->record_success_degenerated(is_young());
+  ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), abbreviated);
 }
