@@ -88,6 +88,7 @@ private:
   ShenandoahSharedFlag _preemption_requested;
   ShenandoahSharedFlag _gc_requested;
   ShenandoahSharedFlag _alloc_failure_gc;
+  ShenandoahSharedFlag _humongous_alloc_failure_gc;
   ShenandoahSharedFlag _graceful_shutdown;
   ShenandoahSharedFlag _do_counters_update;
   ShenandoahSharedFlag _force_counters_update;
@@ -111,18 +112,20 @@ private:
   bool resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause);
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
-
-  // Return true if degenerated cycle finishes normally.  Return false if the degenerated cycle transformed itself
-  // into a full GC.
-  bool service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
+  void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
   void service_uncommit(double shrink_before, size_t shrink_until);
 
   // Return true if setting the flag which indicates allocation failure succeeds.
-  bool try_set_alloc_failure_gc();
+  bool try_set_alloc_failure_gc(bool is_humongous);
+
   // Notify threads waiting for GC to complete.
   void notify_alloc_failure_waiters();
+
   // True if allocation failure flag has been set.
   bool is_alloc_failure_gc();
+
+  // True if humongous allocation failure flag has been set.
+  bool is_humongous_alloc_failure_gc();
 
   void reset_gc_id();
   void update_gc_id();

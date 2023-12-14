@@ -35,7 +35,18 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(double, ShenandoahMinOldGenGrowthPercent,12.5, EXPERIMENTAL,      \
+  product(uintx, ShenandoahGenerationalHumongousReserve, 0, EXPERIMENTAL,   \
+          "(Generational mode only) What percent of the heap should be "    \
+          "reserved for humongous objects if possible.  Old-generation "    \
+          "collections will endeavor to evacuate old-gen regions within "   \
+          "this reserved area even if these regions do not contain high "   \
+          "percentage of garbage.  Setting a larger value will cause "      \
+          "more frequent old-gen collections.  A smaller value will "       \
+          "increase the likelihood that humongous object allocations "      \
+          "fail, resulting in stop-the-world full GCs.")                    \
+          range(0,100)                                                      \
+                                                                            \
+  product(double, ShenandoahMinOldGenGrowthPercent, 12.5, EXPERIMENTAL,     \
           "(Generational mode only) If the usage within old generation "    \
           "has grown by at least this percent of its live memory size "     \
           "at completion of the most recent old-generation marking "        \
@@ -70,18 +81,21 @@
   product(bool, ShenandoahGenerationalCensusIgnoreOlderCohorts, true,       \
                                                                EXPERIMENTAL,\
           "(Generational mode only) Ignore mortality rates older than the " \
-          " oldest cohort under the tenuring age for the last cycle." )     \
+          "oldest cohort under the tenuring age for the last cycle." )      \
                                                                             \
-  product(uintx, ShenandoahGenerationalMinTenuringAge, 0, EXPERIMENTAL,     \
-          "(Generational mode only) Floor for adaptive tenuring age.")      \
-          range(0,16)                                                       \
+  product(uintx, ShenandoahGenerationalMinTenuringAge, 1, EXPERIMENTAL,     \
+          "(Generational mode only) Floor for adaptive tenuring age. "      \
+          "Setting floor and ceiling to the same value fixes the tenuring " \
+          "age; setting both to 1 simulates a poor approximation to "       \
+          "AlwaysTenure, and setting both to 16 simulates NeverTenure.")    \
+          range(1,16)                                                       \
                                                                             \
   product(uintx, ShenandoahGenerationalMaxTenuringAge, 15, EXPERIMENTAL,    \
           "(Generational mode only) Ceiling for adaptive tenuring age. "    \
-          "Setting min and max to the same value fixes the tenuring age, "  \
-          "setting both to 0 simulates Always Tenure, and setting both to " \
-          "16 simulates Never Tenure.")                                     \
-          range(0,16)                                                       \
+          "Setting floor and ceiling to the same value fixes the tenuring " \
+          "age; setting both to 1 simulates a poor approximation to "       \
+          "AlwaysTenure, and setting both to 16 simulates NeverTenure.")    \
+          range(1,16)                                                       \
                                                                             \
   product(double, ShenandoahGenerationalTenuringMortalityRateThreshold,     \
                                                          0.1, EXPERIMENTAL, \
@@ -487,7 +501,7 @@
           "When running in passive mode, this can be toggled to measure "   \
           "either Degenerated GC or Full GC costs.")                        \
                                                                             \
-  product(uintx, ShenandoahFullGCThreshold, 64, EXPERIMENTAL,               \
+  product(uintx, ShenandoahFullGCThreshold, 3, EXPERIMENTAL,                \
           "How many back-to-back Degenerated GCs should happen before "     \
           "going to a Full GC.")                                            \
                                                                             \
@@ -518,7 +532,7 @@
           "likelihood. Following each mixed collection, abandon all "       \
           "remaining mixed collection candidate regions with likelihood "   \
           "ShenandoahCoalesceChance. Abandoning a mixed collection will "   \
-          "cause the old regions to be made parseable, rather than being "  \
+          "cause the old regions to be made parsable, rather than being "   \
           "evacuated.")                                                     \
           range(0, 100)                                                     \
                                                                             \
@@ -594,7 +608,7 @@
           "With generational mode, increment the age of objects and"        \
           "regions each time this many young-gen GC cycles are completed.") \
                                                                             \
-  notproduct(bool, ShenandoahEnableCardStats, trueInDebug,                  \
+  notproduct(bool, ShenandoahEnableCardStats, false,                        \
           "Enable statistics collection related to clean & dirty cards")    \
                                                                             \
   notproduct(int, ShenandoahCardStatsLogInterval, 50,                       \

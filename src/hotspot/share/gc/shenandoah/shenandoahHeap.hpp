@@ -162,9 +162,6 @@ private:
   ShenandoahHeapLock _lock;
   ShenandoahGeneration* _gc_generation;
 
-  // true iff we are concurrently coalescing and filling old-gen HeapRegions
-  bool _prepare_for_old_mark;
-
 public:
   ShenandoahHeapLock* lock() {
     return &_lock;
@@ -369,8 +366,6 @@ private:
   size_t _old_evac_reserve;            // Bytes reserved within old-gen to hold evacuated objects from old-gen collection set
   size_t _young_evac_reserve;          // Bytes reserved within young-gen to hold evacuated objects from young-gen collection set
 
-  bool _upgraded_to_full;
-
   ShenandoahAgeCensus* _age_census;    // Age census used for adapting tenuring threshold in generational mode
 
   // At the end of final mark, but before we begin evacuating, heuristics calculate how much memory is required to
@@ -405,7 +400,7 @@ public:
   void set_has_forwarded_objects(bool cond);
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
-  void set_prepare_for_old_mark_in_progress(bool cond);
+
   void set_aging_cycle(bool cond);
 
   inline bool is_stable() const;
@@ -424,11 +419,8 @@ public:
   inline bool is_stw_gc_in_progress() const;
   inline bool is_concurrent_strong_root_in_progress() const;
   inline bool is_concurrent_weak_root_in_progress() const;
-  inline bool is_prepare_for_old_mark_in_progress() const;
+  bool is_prepare_for_old_mark_in_progress() const;
   inline bool is_aging_cycle() const;
-  inline bool upgraded_to_full() { return _upgraded_to_full; }
-  inline void start_conc_gc() { _upgraded_to_full = false; }
-  inline void record_upgrade_to_full() { _upgraded_to_full = true; }
 
   inline void clear_promotion_potential() { _promotion_potential = 0; };
   inline void set_promotion_potential(size_t val) { _promotion_potential = val; };
@@ -858,14 +850,10 @@ public:
 
   static inline void increase_object_age(oop obj, uint additional_age);
 
-  // Return the object's age (at a safepoint or when object isn't
-  // mutable by the mutator)
-  static inline uint get_object_age(oop obj);
-
   // Return the object's age, or a sentinel value when the age can't
   // necessarily be determined because of concurrent locking by the
   // mutator
-  static inline uint get_object_age_concurrent(oop obj);
+  static inline uint get_object_age(oop obj);
 
   void transfer_old_pointers_from_satb();
 
