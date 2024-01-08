@@ -1,13 +1,11 @@
-name: "Refresh jdk from Upstream"
+name: "Refresh jdk21 from Upstream"
 on:
   schedule:
-    - cron: '0 8 * * *'
+    - cron: '0 7 * * *'
   workflow_dispatch:
-env:
-  UPSTREAM_REMOTE: https://github.com/openjdk/jdk21u
-  LOCAL_BRANCH: develop
+
 jobs:
-    refresh-jdk:
+    refresh-jdk21:
         runs-on: ubuntu-latest
         name: "Update Corretto-21"
         if: github.repository_owner == 'corretto'
@@ -16,17 +14,23 @@ jobs:
               uses: actions/checkout@v2
               with:
                 fetch-depth: 0
-                ref: ${{ env.LOCAL_BRANCH }}
-            - name: "Configure the user"
-              run: |
-                git config user.email "no-reply@amazon.com"
-                git config user.name "corretto-github-robot"
-            - name: "Merge openjdk/jdk:master to the corretto-21:develop"
-              run: |
-                git fetch $UPSTREAM_REMOTE master || exit 1
-                git merge -m "Merge upstream-jdk" FETCH_HEAD
+            - name: "Fetch Corretto-21 upstream"
+              uses: ./.github/actions/fetch-repo
+              with:
+                upstream: 'https://github.com/openjdk/jdk21u.git'
+                local-branch: 'upstream'
+            - name: "Merge Corretto-21"
+              uses: ./.github/actions/merge-repo
+              with:
+                upstream: 'upstream'
+                merge-branch: 'develop'
             - name: "Update Corretto version"
-              shell: bash
-              run: bash ./.github/scripts/update-version.sh $UPSTREAM_REMOTE
-            - name: "Push to the corretto-21"
-              run: git push origin $LOCAL_BRANCH
+              uses: ./.github/actions/update-version
+              with:
+                upstream: 'upstream'
+                version-branch: 'develop'
+            - name: "Merge Corretto-21 develop to nightly"
+              uses: ./.github/actions/merge-repo
+              with:
+                upstream: 'develop'
+                merge-branch: 'nightly'
