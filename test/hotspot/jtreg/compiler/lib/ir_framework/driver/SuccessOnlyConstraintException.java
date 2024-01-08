@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,15 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8214583
- * @summary Check that getSubject works after JIT compiler escape analysis.
+package compiler.lib.ir_framework.driver;
+
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+
+/**
+ * Exception used to signal that a {@link Constraint} should always succeed.
  */
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import javax.security.auth.Subject;
-
-public class DoAs {
-
-    public static void main(String[] args) throws Exception {
-        final Set<String> outer = new HashSet<>(Arrays.asList("Outer"));
-        final Subject subject = new Subject(true, Collections.EMPTY_SET, outer, Collections.EMPTY_SET);
-
-        for (int i = 0; i < 100_000; ++i) {
-            final int index = i;
-            Subject.callAs(subject, () -> {
-                Subject s = Subject.current();
-                if (s != subject) {
-                    throw new AssertionError("outer Oops! " + "iteration " + index + " " + s + " != " + subject);
-                }
-                return 0;
-            });
-        }
+public class SuccessOnlyConstraintException extends RuntimeException {
+    public SuccessOnlyConstraintException(String message) {
+        super("Unhandled SuccessOnlyConstraintException, should have created a Constraint that always succeeds:" + System.lineSeparator() + message);
     }
 }

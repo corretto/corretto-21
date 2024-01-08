@@ -910,6 +910,7 @@ public class JavacParser implements Parser {
                 if (mods.annotations.nonEmpty()) {
                     log.error(mods.annotations.head.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
                 }
+                checkNoMods(pos, mods.flags & Flags.FINAL);
                 new TreeScanner() {
                     @Override
                     public void visitAnnotatedType(JCAnnotatedType tree) {
@@ -3361,6 +3362,8 @@ public class JavacParser implements Parser {
                 case RPAREN: parenDepth--; break;
                 case ARROW: return parenDepth > 0 ? PatternResult.EXPRESSION
                                                    : pendingResult;
+                case FINAL:
+                    if (parenDepth > 0) return PatternResult.PATTERN;
                 default: return pendingResult;
             }
             lookahead++;
