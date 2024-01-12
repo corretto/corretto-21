@@ -622,7 +622,7 @@ void InterpreterMacroAssembler::remove_activation(
   // Check that all monitors are unlocked
   {
     Label loop, exception, entry, restart;
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
     const Address monitor_block_bot(
@@ -691,6 +691,12 @@ void InterpreterMacroAssembler::remove_activation(
   if (StackReservedPages > 0) {
     // testing if reserved zone needs to be re-enabled
     Label no_reserved_zone_enabling;
+
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    ldrw(rscratch1, Address(rthread, JavaThread::stack_guard_state_offset()));
+    cmpw(rscratch1, (u1)StackOverflow::stack_guard_enabled);
+    br(Assembler::EQ, no_reserved_zone_enabling);
 
     // look for an overflow into the stack reserved zone, i.e.
     // interpreter_frame_sender_sp <= JavaThread::reserved_stack_activation
@@ -1663,7 +1669,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 }
 
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {
-  assert_different_registers(obj, rscratch1);
+  assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
   Label update, next, none;
 
   verify_oop(obj);
@@ -1685,13 +1691,13 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   tbnz(obj, exact_log2(TypeEntries::type_unknown), next);
   // already unknown. Nothing to do anymore.
 
-  ldr(rscratch1, mdo_addr);
   cbz(rscratch1, none);
   cmp(rscratch1, (u1)TypeEntries::null_seen);
   br(Assembler::EQ, none);
-  // There is a chance that the checks above (re-reading profiling
-  // data from memory) fail if another thread has just set the
+  // There is a chance that the checks above
+  // fail if another thread has just set the
   // profiling to this obj's klass
+  eor(obj, obj, rscratch1); // get back original value before XOR
   ldr(rscratch1, mdo_addr);
   eor(obj, obj, rscratch1);
   tst(obj, TypeEntries::type_klass_mask);
@@ -1704,6 +1710,10 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bind(none);
   // first time here. Set profile type.
   str(obj, mdo_addr);
+#ifdef ASSERT
+  andr(obj, obj, TypeEntries::type_mask);
+  verify_klass_ptr(obj);
+#endif
 
   bind(next);
 }

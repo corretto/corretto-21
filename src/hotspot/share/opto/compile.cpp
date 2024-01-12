@@ -826,8 +826,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN || StressCCP) {
-    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && RepeatCompilation)) {
+  if (StressLCM || StressGCM || StressIGVN || StressCCP || StressIncrementalInlining) {
+    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
       _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
       FLAG_SET_ERGO(StressSeed, _stress_seed);
     } else {
@@ -2230,6 +2230,8 @@ void Compile::Optimize() {
 
   process_for_unstable_if_traps(igvn);
 
+  if (failing())  return;
+
   inline_incrementally(igvn);
 
   print_method(PHASE_INCREMENTAL_INLINE, 2);
@@ -2240,7 +2242,9 @@ void Compile::Optimize() {
     // Inline valueOf() methods now.
     inline_boxing_calls(igvn);
 
-    if (AlwaysIncrementalInline) {
+    if (failing())  return;
+
+    if (AlwaysIncrementalInline || StressIncrementalInlining) {
       inline_incrementally(igvn);
     }
 
@@ -2255,16 +2259,20 @@ void Compile::Optimize() {
   // CastPP nodes.
   remove_speculative_types(igvn);
 
+  if (failing())  return;
+
   // No more new expensive nodes will be added to the list from here
   // so keep only the actual candidates for optimizations.
   cleanup_expensive_nodes(igvn);
+
+  if (failing())  return;
 
   assert(EnableVectorSupport || !has_vbox_nodes(), "sanity");
   if (EnableVectorSupport && has_vbox_nodes()) {
     TracePhase tp("", &timers[_t_vector]);
     PhaseVector pv(igvn);
     pv.optimize_vector_boxes();
-
+    if (failing())  return;
     print_method(PHASE_ITER_GVN_AFTER_VECTOR, 2);
   }
   assert(!has_vbox_nodes(), "sanity");
@@ -2283,6 +2291,8 @@ void Compile::Optimize() {
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
   // safepoints
   remove_root_to_sfpts_edges(igvn);
+
+  if (failing())  return;
 
   // Perform escape analysis
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
@@ -2393,6 +2403,8 @@ void Compile::Optimize() {
 
   process_for_post_loop_opts_igvn(igvn);
 
+  if (failing())  return;
+
 #ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeMacroExpand);
 #endif
@@ -2431,6 +2443,7 @@ void Compile::Optimize() {
     // More opportunities to optimize virtual and MH calls.
     // Though it's maybe too late to perform inlining, strength-reducing them to direct calls is still an option.
     process_late_inline_calls_no_inline(igvn);
+    if (failing())  return;
   }
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
@@ -4907,6 +4920,7 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     igvn.remove_speculative_types();
     if (modified > 0) {
       igvn.optimize();
+      if (failing())  return;
     }
 #ifdef ASSERT
     // Verify that after the IGVN is over no speculative type has resurfaced

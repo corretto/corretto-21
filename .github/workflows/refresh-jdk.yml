@@ -30,3 +30,8 @@ jobs:
               run: bash ./.github/scripts/update-version.sh $UPSTREAM_REMOTE
             - name: "Push to the corretto-21"
               run: git push origin $LOCAL_BRANCH
+            - name: "Merge Corretto-21 develop to nightly"
+              shell: bash
+              run: |
+                git checkout nightly
+                git merge origin/$LOCAL_BRANCH
