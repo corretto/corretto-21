@@ -35,3 +35,4 @@ jobs:
               run: |
                 git checkout nightly
                 git merge origin/$LOCAL_BRANCH
+                git push origin nightly
