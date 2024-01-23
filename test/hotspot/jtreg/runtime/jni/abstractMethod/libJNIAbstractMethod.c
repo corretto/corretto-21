@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+#include <jni.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#ifndef SHARE_GC_X_XARGUMENTS_HPP
-#define SHARE_GC_X_XARGUMENTS_HPP
+JNIEXPORT void JNICALL Java_TestJNIAbstractMethod_invokeAbstractM(JNIEnv* env,
+                                                                  jclass this_cls,
+                                                                  jclass target_cls,
+                                                                  jobject receiver) {
 
-#include "gc/shared/gcArguments.hpp"
+  jmethodID mid = (*env)->GetMethodID(env, target_cls, "abstractM", "()V");
+  if (mid == NULL) {
+    fprintf(stderr, "Error looking up method abstractM\n");
+    (*env)->ExceptionDescribe(env);
+    exit(1);
+  }
 
-class CollectedHeap;
+  printf("Invoking abstract method ...\n");
+  (*env)->CallVoidMethod(env, receiver, mid);  // Should raise exception
 
-class XArguments : AllStatic {
-public:
-  static void initialize_alignments();
-  static void initialize_heap_flags_and_sizes();
-  static void initialize();
-  static size_t heap_virtual_to_physical_ratio();
-  static CollectedHeap* create_heap();
-
-  static bool is_supported();
-
-  static bool is_os_supported();
-};
-
-#endif // SHARE_GC_X_XARGUMENTS_HPP
+}
