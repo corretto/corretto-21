@@ -1411,7 +1411,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
       if (req.affiliation() == YOUNG_GENERATION) {
         if (req.is_mutator_alloc()) {
           size_t young_words_available = young_generation()->available() / HeapWordSize;
-          if (ShenandoahElasticTLAB && req.is_lab_alloc() && (req.min_size() < young_words_available)) {
+          if (req.is_lab_alloc() && (req.min_size() < young_words_available)) {
             // Allow ourselves to try a smaller lab size even if requested_bytes <= young_available.  We may need a smaller
             // lab size because young memory has become too fragmented.
             try_smaller_lab_size = true;
@@ -1931,16 +1931,12 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 
 // Returns size in bytes
 size_t ShenandoahHeap::unsafe_max_tlab_alloc(Thread *thread) const {
-  if (ShenandoahElasticTLAB) {
-    if (mode()->is_generational()) {
-      return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
-    } else {
-      // With Elastic TLABs, return the max allowed size, and let the allocation path
-      // figure out the safe size for current allocation.
-      return ShenandoahHeapRegion::max_tlab_size_bytes();
-    }
+  if (mode()->is_generational()) {
+    return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
   } else {
-    return MIN2(_free_set->unsafe_peek_free(), ShenandoahHeapRegion::max_tlab_size_bytes());
+    // Return the max allowed size, and let the allocation path
+    // figure out the safe size for current allocation.
+    return ShenandoahHeapRegion::max_tlab_size_bytes();
   }
 }
 
@@ -2632,10 +2628,6 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->collection_set() != nullptr, "Sanity");
   return (address) heap->collection_set()->biased_map_address();
-}
-
-address ShenandoahHeap::gc_state_addr() {
-  return (address) ShenandoahHeap::heap()->_gc_state.addr_of();
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
