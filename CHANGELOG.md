@@ -2,6 +2,32 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.2.14.1
+Release Date: February 8, 2024
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto) in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.2.14.1:
+
+| Issue Name           | Platform | Description                                                                             | Link                                                                         |
+|----------------------|----------|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| [AArch64] C1 compilation fails because monitor offset in OSR buffer is too large for immediate | All Linux      | Fixes regression from [JDK-8293671](https://bugs.openjdk.org/browse/JDK-8293671) | [JDK-8310844](https://bugs.openjdk.org/browse/JDK-8310844)  |
+| LinkedTransferQueue add and put methods call overridable offer | All Linux      | Fixes regression from [JDK-8301341](https://bugs.openjdk.org/browse/JDK-8301341)        | [JDK-8323659](https://bugs.openjdk.org/browse/JDK-8323659)         |
+| Incorrect LoaderConstraintTable::add_entry after JDK-8298468    | All Linux      | Fixes regression from [JDK-8298468](https://bugs.openjdk.org/browse/JDK-8298468)   | [JDK-8322282](https://bugs.openjdk.org/browse/JDK-8322282)                                     |
+| AArch64: crypto pmull based CRC32/CRC32C intrinsics clobber V8-V15 registers | All Linux     |Fixes register clobber on aarch64 architetures| [JDK-8324874](https://bugs.openjdk.org/browse/JDK-8324874)                                         |
+
+No CVEs are addressed in 21.0.2.14.1
+
+
 ## Corretto version: 21.0.2.13.1
 Release Date: January 16, 2024
 
