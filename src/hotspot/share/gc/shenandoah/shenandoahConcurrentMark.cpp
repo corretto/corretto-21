@@ -62,8 +62,9 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
-    ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
+    ShenandoahSuspendibleThreadSetJoiner stsj;
     ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
+
     assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
     _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
