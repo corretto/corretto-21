@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * @test
- * @bug 5029449
- * @summary Tests for the Julian calendar system (before the Gregorian cutover)
- * @run junit JulianTest
- */
+package org.openjdk.bench.java.security;
 
-import static java.util.GregorianCalendar.*;
+import org.openjdk.jmh.annotations.*;
 
-import org.junit.jupiter.api.Test;
+import java.security.SecureRandom;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.fail;
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 3)
+public class SecureRandomBench {
 
-public class JulianTest {
-
-    /*
-     * 5029449: Regression: GregorianCalendar produces wrong Julian calendar dates in BC 1
-     */
-    @Test
-    public void Test5029449() {
-        Koyomi cal = new Koyomi();
-        cal.clear();
-        cal.set(1, JANUARY, 0);
-        // Date should be BC 1/12/31
-        if (!cal.checkFieldValue(ERA, BC)
-            || !cal.checkDate(1, DECEMBER, 31)) {
-            fail(cal.getMessage());
-        }
+    @Benchmark
+    public SecureRandom create() throws Exception {
+        return new SecureRandom();
     }
 }

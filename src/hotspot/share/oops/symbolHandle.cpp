@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,27 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 5029449
- * @summary Tests for the Julian calendar system (before the Gregorian cutover)
- * @run junit JulianTest
- */
+#include "precompiled.hpp"
+#include "oops/symbolHandle.hpp"
+#include "runtime/atomic.hpp"
 
-import static java.util.GregorianCalendar.*;
+Symbol* volatile TempSymbolCleanupDelayer::_queue[QueueSize] = {};
+volatile uint TempSymbolCleanupDelayer::_index = 0;
 
-import org.junit.jupiter.api.Test;
+// Keep this symbol alive for some time to allow for reuse.
+// Temp symbols for the same string can often be created in quick succession,
+// and this queue allows them to be reused instead of churning.
+void TempSymbolCleanupDelayer::delay_cleanup(Symbol* sym) {
+  assert(sym != nullptr, "precondition");
+  sym->increment_refcount();
+  uint i = Atomic::add(&_index, 1u) % QueueSize;
+  Symbol* old = Atomic::xchg(&_queue[i], sym);
+  Symbol::maybe_decrement_refcount(old);
+}
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-public class JulianTest {
-
-    /*
-     * 5029449: Regression: GregorianCalendar produces wrong Julian calendar dates in BC 1
-     */
-    @Test
-    public void Test5029449() {
-        Koyomi cal = new Koyomi();
-        cal.clear();
-        cal.set(1, JANUARY, 0);
-        // Date should be BC 1/12/31
-        if (!cal.checkFieldValue(ERA, BC)
-            || !cal.checkDate(1, DECEMBER, 31)) {
-            fail(cal.getMessage());
-        }
-    }
+void TempSymbolCleanupDelayer::drain_queue() {
+  for (uint i = 0; i < QueueSize; i++) {
+    Symbol* sym = Atomic::xchg(&_queue[i], (Symbol*) nullptr);
+    Symbol::maybe_decrement_refcount(sym);
+  }
 }
