@@ -45,7 +45,6 @@
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
-#ifdef ASSERT
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
@@ -59,7 +58,6 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
     }
   }
 }
-#endif // ASSERT
 
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
@@ -213,7 +211,8 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     const uint8_t* here = align_down(addr, smallest_possible_alignment);
     const uint8_t* const end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
     for (; here >= end; here -= smallest_possible_alignment) {
-      if (!os::is_readable_pointer(here)) {
+      // JDK-8306561: cast to a MallocHeader needs to guarantee it can reside in readable memory
+      if (!os::is_readable_range(here, here + sizeof(MallocHeader))) {
         // Probably OOB, give up
         break;
       }

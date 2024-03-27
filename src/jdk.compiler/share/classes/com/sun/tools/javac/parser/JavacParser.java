@@ -910,6 +910,7 @@ public class JavacParser implements Parser {
                 if (mods.annotations.nonEmpty()) {
                     log.error(mods.annotations.head.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
                 }
+                checkNoMods(pos, mods.flags & Flags.FINAL);
                 new TreeScanner() {
                     @Override
                     public void visitAnnotatedType(JCAnnotatedType tree) {
@@ -2853,6 +2854,7 @@ public class JavacParser implements Parser {
                     case INTLITERAL: case LONGLITERAL: case FLOATLITERAL: case DOUBLELITERAL:
                     case NULL: case IDENTIFIER: case TRUE: case FALSE:
                     case NEW: case SWITCH: case THIS: case SUPER:
+                    case BYTE, CHAR, SHORT, INT, LONG, FLOAT, DOUBLE, VOID, BOOLEAN:
                         isYieldStatement = true;
                         break;
                     case PLUSPLUS: case SUBSUB:
@@ -3310,6 +3312,8 @@ public class JavacParser implements Parser {
                         } else {
                             pendingResult = PatternResult.PATTERN;
                         }
+                    } else if (typeDepth == 0 && parenDepth == 0 && (peekToken(lookahead, tk -> tk == ARROW || tk == COMMA))) {
+                        return PatternResult.EXPRESSION;
                     }
                     break;
                 case UNDERSCORE:
@@ -3359,6 +3363,8 @@ public class JavacParser implements Parser {
                 case RPAREN: parenDepth--; break;
                 case ARROW: return parenDepth > 0 ? PatternResult.EXPRESSION
                                                    : pendingResult;
+                case FINAL:
+                    if (parenDepth > 0) return PatternResult.PATTERN;
                 default: return pendingResult;
             }
             lookahead++;
@@ -3916,7 +3922,7 @@ public class JavacParser implements Parser {
 
         boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
         boolean isUnnamedClass = false;
-        while (token.kind != EOF) {
+        OUTER: while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
                 skip(firstTypeDecl, false, false, false);
@@ -3931,6 +3937,8 @@ public class JavacParser implements Parser {
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
                 semiList.append(toP(F.at(token.pos).Skip()));
                 nextToken();
+                if (token.kind == EOF)
+                    break OUTER;
             }
             if (firstTypeDecl && mods == null && token.kind == IMPORT) {
                 if (!semiList.isEmpty()) {
@@ -3997,7 +4005,7 @@ public class JavacParser implements Parser {
                     checkSourceLevel(token.pos, Feature.UNNAMED_CLASSES);
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods));
                     isUnnamedClass = true;
-                } else if (token.kind != EOF) {
+                } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
                         def = statement.expr;

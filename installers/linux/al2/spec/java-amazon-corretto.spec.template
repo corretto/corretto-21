@@ -31,6 +31,9 @@
 %global zlib_option $zlib_option
 %global use_gcc_ver $use_gcc_ver
 
+# Disable build_id links as they can collide between versions of Corretto
+%global _build_id_links none
+
 # The experimental_feature macro gets set to %nil by the template, but that is still defined and
 # the spec doesn't have a quick is not nil check, just define/not defined, this makes it easier to
 # work with
@@ -319,7 +322,7 @@ if [ \$1 -eq 1 ] ; then
 
   # Need to setup the jre alternatives separately when there is a higher priority jre java these don't get created above.
   alternatives --install %{_jvmdir}/jre-%{java_major_version} jre_%{java_major_version} %{java_home} %{alternatives_priority} \
-               --slave %{_jvmdir}/jre-%{java_major_version}-openjdk jre_%{java_major_version}_openjdk %{java_home}/jre
+               --slave %{_jvmdir}/jre-%{java_major_version}-openjdk jre_%{java_major_version}_openjdk %{java_home}
 fi
 
 %post devel

@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -54,6 +54,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -1640,18 +1641,25 @@ public:
   bool evaluate_at_safepoint() const override { return false; }
   VMOp_Type type() const override { return VMOp_RendezvousGCThreads; }
   void doit() override {
-    SuspendibleThreadSet::synchronize();
-    SuspendibleThreadSet::desynchronize();
+    Universe::heap()->safepoint_synchronize_begin();
+    Universe::heap()->safepoint_synchronize_end();
   };
 };
 
-static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
-  size_t count = 0;
+static size_t delete_monitors(Thread* current, GrowableArray<ObjectMonitor*>* delete_list,
+                              LogStream* ls, elapsedTimer* timer_p) {
+  NativeHeapTrimmer::SuspendMark sm("monitor deletion");
+  size_t deleted_count = 0;
   for (ObjectMonitor* monitor: *delete_list) {
     delete monitor;
-    count++;
+    deleted_count++;
+    if (current->is_Java_thread()) {
+      // A JavaThread must check for a safepoint/handshake and honor it.
+      ObjectSynchronizer::chk_for_block_req(JavaThread::cast(current), "deletion", "deleted_count",
+                                            deleted_count, ls, timer_p);
+    }
   }
-  return count;
+  return deleted_count;
 }
 
 // This function is called by the MonitorDeflationThread to deflate
@@ -1729,30 +1737,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
 
     // After the handshake, safely free the ObjectMonitors that were
     // deflated and unlinked in this cycle.
-    if (current->is_Java_thread()) {
-      if (ls != NULL) {
-        timer.stop();
-        ls->print_cr("before setting blocked: unlinked_count=" SIZE_FORMAT
-                     ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
-                     SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     unlinked_count, in_use_list_ceiling(),
-                     _in_use_list.count(), _in_use_list.max());
-      }
-      // Mark the calling JavaThread blocked (safepoint safe) while we free
-      // the ObjectMonitors so we don't delay safepoints whilst doing that.
-      ThreadBlockInVM tbivm(JavaThread::cast(current));
-      if (ls != NULL) {
-        ls->print_cr("after setting blocked: in_use_list stats: ceiling="
-                     SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-        timer.start();
-      }
-      deleted_count = delete_monitors(&delete_list);
-      // ThreadBlockInVM is destroyed here
-    } else {
-      // A non-JavaThread can just free the ObjectMonitors:
-      deleted_count = delete_monitors(&delete_list);
-    }
+    deleted_count = delete_monitors(current, &delete_list, ls, &timer);
     assert(unlinked_count == deleted_count, "must be");
   }
 

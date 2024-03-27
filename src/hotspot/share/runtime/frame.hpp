@@ -236,6 +236,8 @@ class frame {
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
+  Method* safe_interpreter_frame_method() const;
+
   // All frames:
 
   // A low-level interface for vframes:
@@ -370,6 +372,7 @@ class frame {
   BasicObjectLock* next_monitor_in_interpreter_frame(BasicObjectLock* current) const;
   BasicObjectLock* previous_monitor_in_interpreter_frame(BasicObjectLock* current) const;
   static int interpreter_frame_monitor_size();
+  static int interpreter_frame_monitor_size_in_bytes();
 
   void interpreter_frame_verify_monitor(BasicObjectLock* value) const;
 

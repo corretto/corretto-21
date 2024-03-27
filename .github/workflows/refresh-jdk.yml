@@ -4,7 +4,7 @@ on:
     - cron: '0 8 * * *'
   workflow_dispatch:
 env:
-  UPSTREAM_REMOTE: https://github.com/openjdk/jdk21
+  UPSTREAM_REMOTE: https://github.com/openjdk/jdk21u
   LOCAL_BRANCH: develop
 jobs:
     refresh-jdk:
@@ -30,3 +30,9 @@ jobs:
               run: bash ./.github/scripts/update-version.sh $UPSTREAM_REMOTE
             - name: "Push to the corretto-21"
               run: git push origin $LOCAL_BRANCH
+            - name: "Merge Corretto-21 develop to nightly"
+              shell: bash
+              run: |
+                git checkout nightly
+                git merge origin/$LOCAL_BRANCH
+                git push origin nightly
