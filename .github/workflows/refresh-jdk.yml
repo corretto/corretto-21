@@ -36,3 +36,9 @@ jobs:
                 git checkout nightly
                 git merge origin/$LOCAL_BRANCH
                 git push origin nightly
+            - name: "Merge Corretto-21 develop to lilliput"
+              shell: bash
+              run: |
+                git checkout lilliput
+                git merge origin/$LOCAL_BRANCH
+                git push origin lilliput
