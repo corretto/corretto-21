@@ -344,6 +344,7 @@ public:
   };
 
 private:
+  bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
@@ -382,11 +383,19 @@ private:
   // determined by analysis of live data found during the previous GC pass which is one less than the current tenure age.
   bool _has_evacuation_reserve_quantities;
 
-  void set_gc_state_all_threads(char state);
-  void set_gc_state_mask(uint mask, bool value);
+  // This updates the singlular, global gc state. This must happen on a safepoint.
+  void set_gc_state(uint mask, bool value);
 
 public:
   char gc_state() const;
+
+  // This copies the global gc state into a thread local variable for java threads.
+  // It is primarily intended to support quick access at barriers.
+  void propagate_gc_state_to_java_threads();
+
+  // This is public to support assertions that the state hasn't been changed off of
+  // a safepoint and that any changes were propagated to java threads after the safepoint.
+  bool has_gc_state_changed() const { return _gc_state_changed; }
 
   void set_evacuation_reserve_quantities(bool is_valid);
   void set_concurrent_young_mark_in_progress(bool in_progress);
