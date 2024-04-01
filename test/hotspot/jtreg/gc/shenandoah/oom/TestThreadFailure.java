@@ -81,6 +81,7 @@ public class TestThreadFailure {
                     "-Xmx32m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
+                    "-XX:ShenandoahNoProgressThreshold=16",
                     TestThreadFailure.class.getName(),
                     "test");
 

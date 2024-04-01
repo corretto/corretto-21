@@ -25,12 +25,9 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHREGULATORTHREAD_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
-#include "gc/shared/gcCause.hpp"
-#include "gc/shenandoah/shenandoahSharedVariables.hpp"
-#include "runtime/mutex.hpp"
 
 class ShenandoahHeuristics;
-class ShenandoahControlThread;
+class ShenandoahGenerationalControlThread;
 
 /*
  * The purpose of this class (and thread) is to allow us to continue
@@ -48,29 +45,17 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   friend class VMStructs;
 
  public:
-  explicit ShenandoahRegulatorThread(ShenandoahControlThread* control_thread);
-
-  const char* name() const { return "ShenandoahRegulatorThread";}
-
-  // This is called from allocation path, and thus should be fast.
-  void notify_heap_changed() {
-    // Notify that something had changed.
-    if (_heap_changed.is_unset()) {
-      _heap_changed.set();
-    }
-  }
+  explicit ShenandoahRegulatorThread(ShenandoahGenerationalControlThread* control_thread);
 
  protected:
-  void run_service();
-  void stop_service();
+  void run_service() override;
+  void stop_service() override;
 
  private:
   // When mode is generational
   void regulate_young_and_old_cycles();
   // When mode is generational, but ShenandoahAllowOldMarkingPreemption is false
   void regulate_young_and_global_cycles();
-  // Default behavior for other modes (single generation).
-  void regulate_global_cycles();
 
   // These return true if a cycle was started.
   bool start_old_cycle();
@@ -87,13 +72,12 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   // Provides instrumentation to track how long it takes to acknowledge a request.
   bool request_concurrent_gc(ShenandoahGenerationType generation);
 
-  ShenandoahSharedFlag _heap_changed;
-  ShenandoahControlThread* _control_thread;
+  ShenandoahGenerationalControlThread* _control_thread;
   ShenandoahHeuristics* _young_heuristics;
   ShenandoahHeuristics* _old_heuristics;
   ShenandoahHeuristics* _global_heuristics;
 
-  int _sleep;
+  uint _sleep;
   double _last_sleep_adjust_time;
 };
 

@@ -182,7 +182,7 @@ void ShenandoahUnload::unload() {
 
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_cldg);
-      ClassLoaderDataGraph::purge(/*at_safepoint*/false);
+      ClassLoaderDataGraph::purge(false /* at_safepoint */);
     }
 
     {

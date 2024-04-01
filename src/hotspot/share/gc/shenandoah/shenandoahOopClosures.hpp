@@ -28,17 +28,12 @@
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
-
-enum StringDedupMode {
-  NO_DEDUP,      // Do not do anything for String deduplication
-  ENQUEUE_DEDUP, // Enqueue candidate Strings for deduplication, if meet age threshold
-  ALWAYS_DEDUP   // Enqueue Strings for deduplication
-};
 
 class ShenandoahMarkRefsSuperClosure : public MetadataVisitingOopIterateClosure {
 private:
@@ -140,23 +135,6 @@ private:
 
 public:
   ShenandoahConcUpdateRefsClosure() : ShenandoahUpdateRefsSuperClosure() {}
-
-  virtual void do_oop(narrowOop* p) { work(p); }
-  virtual void do_oop(oop* p)       { work(p); }
-};
-
-class ShenandoahSetRememberedCardsToDirtyClosure : public BasicOopIterateClosure {
-protected:
-  ShenandoahHeap*    const _heap;
-  RememberedScanner* const _scanner;
-
-public:
-  ShenandoahSetRememberedCardsToDirtyClosure() :
-      _heap(ShenandoahHeap::heap()),
-      _scanner(_heap->card_scan()) {}
-
-  template<class T>
-  inline void work(T* p);
 
   virtual void do_oop(narrowOop* p) { work(p); }
   virtual void do_oop(oop* p)       { work(p); }
