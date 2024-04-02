@@ -91,6 +91,10 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/stress/TestStressG1Humongous.java 8286554 windows-x64
+gc/shenandoah/TestHumongousThreshold.java#default 8327000 generic-all
+gc/shenandoah/TestHumongousThreshold.java#16b 8327000 generic-all
+gc/shenandoah/TestHumongousThreshold.java#generational 8327000 generic-all
+gc/shenandoah/TestHumongousThreshold.java#generational-16b 8327000 generic-all
 
 #############################################################################
 
