@@ -5,7 +5,9 @@ on:
   workflow_dispatch:
 env:
   UPSTREAM_REMOTE: https://github.com/openjdk/jdk21u
+  UPSTREAM_SHENANDOAH: https://github.com/openjdk/shenandoah-jdk21u
   LOCAL_BRANCH: develop
+  LOCAL_SHENANDOAH: generational-shenandoah
 jobs:
     refresh-jdk:
         runs-on: ubuntu-latest
@@ -42,3 +44,16 @@ jobs:
                 git checkout lilliput
                 git merge origin/$LOCAL_BRANCH
                 git push origin lilliput
+            - name: "Merge openjdk/shenandoah-jdk21u:master to generational-shenandoah"
+              shell: bash
+              run: |
+                git checkout $LOCAL_SHENANDOAH
+                git fetch $UPSTREAM_SHENANDOAH master || exit 1
+                git merge -m "Merge upstream shenandoah" FETCH_HEAD
+                git push origin $LOCAL_SHENANDOAH
+            - name: "Merge Corretto-21 develop to generational-shenandoah"
+              shell: bash
+              run: |
+                git checkout $LOCAL_SHENANDOAH
+                git merge origin/$LOCAL_BRANCH
+                git push origin $LOCAL_SHENANDOAH
