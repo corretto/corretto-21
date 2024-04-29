@@ -2,7 +2,6 @@
 /dist/
 /.idea/
 /.vscode/
-/nbproject/
 nbproject/private/
 /webrev
 /.src-rev
@@ -15,11 +14,15 @@ test/nashorn/lib
 NashornProfile.txt
 **/JTreport/**
 **/JTwork/**
+/.gradle/
+.gradletasknamecache
+/pre-build/
 /src/utils/LogCompilation/target/
 /.project/
 /.settings/
 /.project
 /.classpath
 /.cproject
+commitId.txt
 /compile_commands.json
 /.cache

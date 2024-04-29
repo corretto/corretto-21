@@ -307,36 +307,44 @@ public class VerifyCACerts {
 
     private static MessageDigest md;
 
+    private static final int OVERALL_CA_CERT_COUNT = COUNT + AmazonCACertConstants.AMAZON_CA_CERT_COUNT;
+
     public static void main(String[] args) throws Exception {
         System.out.println("cacerts file: " + CACERTS);
+        FINGERPRINT_MAP.putAll(AmazonCACertConstants.AMAZON_CA_FINGERPRINT_MAP);
+        EXPIRY_EXC_ENTRIES.addAll(AmazonCACertConstants.AMAZON_CA_EXPIRY_EXC_ENTRIES);
 
         // verify integrity of cacerts
         md = MessageDigest.getInstance("SHA-256");
         byte[] data = Files.readAllBytes(Path.of(CACERTS));
+        /* Ignore whole-file checksum as the checksum of the cacerts 
+         * file changes with each build, due to the way we merge upstream 
+         * OpenJDK certs and Amazon Linux certs at build time.
         String checksum = HEX.formatHex(md.digest(data));
         if (!checksum.equals(CHECKSUM)) {
             atLeastOneFailed = true;
             System.err.println("ERROR: wrong checksum " + checksum);
             System.err.println("Expected checksum " + CHECKSUM);
         }
+        */
 
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(new ByteArrayInputStream(data), "changeit".toCharArray());
 
         // check the count of certs inside
-        if (ks.size() != COUNT) {
+        if (ks.size() != OVERALL_CA_CERT_COUNT) {
             atLeastOneFailed = true;
             System.err.println("ERROR: " + ks.size() + " entries, should be "
-                    + COUNT);
+                    + OVERALL_CA_CERT_COUNT);
         }
 
         System.out.println("Trusted CA Certificate count: " + ks.size());
 
         // also ensure FINGERPRINT_MAP lists correct count
-        if (FINGERPRINT_MAP.size() != COUNT) {
+        if (FINGERPRINT_MAP.size() != OVERALL_CA_CERT_COUNT) {
             atLeastOneFailed = true;
             System.err.println("ERROR: " + FINGERPRINT_MAP.size()
-                    + " FINGERPRINT_MAP entries, should be " + COUNT);
+                    + " FINGERPRINT_MAP entries, should be " + OVERALL_CA_CERT_COUNT);
         }
 
         // check that all entries in the map are in the keystore

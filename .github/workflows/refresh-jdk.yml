@@ -1,0 +1,59 @@
+name: "Refresh jdk from Upstream"
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+env:
+  UPSTREAM_REMOTE: https://github.com/openjdk/jdk21u
+  UPSTREAM_SHENANDOAH: https://github.com/openjdk/shenandoah-jdk21u
+  LOCAL_BRANCH: develop
+  LOCAL_SHENANDOAH: generational-shenandoah
+jobs:
+    refresh-jdk:
+        runs-on: ubuntu-latest
+        name: "Update Corretto-21"
+        if: github.repository_owner == 'corretto'
+        steps:
+            - name: "Checkout code"
+              uses: actions/checkout@v2
+              with:
+                fetch-depth: 0
+                ref: ${{ env.LOCAL_BRANCH }}
+            - name: "Configure the user"
+              run: |
+                git config user.email "no-reply@amazon.com"
+                git config user.name "corretto-github-robot"
+            - name: "Merge openjdk/jdk:master to the corretto-21:develop"
+              run: |
+                git fetch $UPSTREAM_REMOTE master || exit 1
+                git merge -m "Merge upstream-jdk" FETCH_HEAD
+            - name: "Update Corretto version"
+              shell: bash
+              run: bash ./.github/scripts/update-version.sh $UPSTREAM_REMOTE
+            - name: "Push to the corretto-21"
+              run: git push origin $LOCAL_BRANCH
+            - name: "Merge Corretto-21 develop to nightly"
+              shell: bash
+              run: |
+                git checkout nightly
+                git merge origin/$LOCAL_BRANCH
+                git push origin nightly
+            - name: "Merge Corretto-21 develop to lilliput"
+              shell: bash
+              run: |
+                git checkout lilliput
+                git merge origin/$LOCAL_BRANCH
+                git push origin lilliput
+            - name: "Merge openjdk/shenandoah-jdk21u:master to generational-shenandoah"
+              shell: bash
+              run: |
+                git checkout $LOCAL_SHENANDOAH
+                git fetch $UPSTREAM_SHENANDOAH master || exit 1
+                git merge -m "Merge upstream shenandoah" FETCH_HEAD
+                git push origin $LOCAL_SHENANDOAH
+            - name: "Merge Corretto-21 develop to generational-shenandoah"
+              shell: bash
+              run: |
+                git checkout $LOCAL_SHENANDOAH
+                git merge origin/$LOCAL_BRANCH
+                git push origin $LOCAL_SHENANDOAH
