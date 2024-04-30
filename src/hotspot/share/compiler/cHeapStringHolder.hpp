@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 7198073 7197662
- * @summary Tests that user preferences are stored in the permanent storage
- * @library /test/lib
- * @build jdk.test.lib.process.* CheckUserPrefFirst CheckUserPrefLater
- * @run main CheckUserPrefsStorage
- */
+#ifndef SHARE_COMPILER_CHEAPSTRINGHOLDER_HPP
+#define SHARE_COMPILER_CHEAPSTRINGHOLDER_HPP
 
-import jdk.test.lib.process.ProcessTools;
+#include "memory/allocation.hpp"
 
-public class CheckUserPrefsStorage {
+// Holder for a C-Heap allocated String
+// The user must ensure that the destructor is called, or at least clear.
+class CHeapStringHolder : public StackObj {
+private:
+  char* _string;
 
-    public static void main(String[] args) throws Throwable {
-        // First to create and store a user preference
-        run("CheckUserPrefFirst");
-        // Then check that preferences stored by CheckUserPrefFirst can be retrieved
-        run("CheckUserPrefLater");
-    }
+public:
+  CHeapStringHolder() : _string(nullptr) {}
+  ~CHeapStringHolder() { clear(); };
+  NONCOPYABLE(CHeapStringHolder);
 
-    public static void run(String testName) throws Exception {
-        ProcessTools.executeTestJava("-Djava.util.prefs.userRoot=.", testName)
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldHaveExitValue(0);
-    }
-}
+  // Allocate memory to hold a copy of string
+  void set(const char* string);
+
+  // Release allocated memory
+  void clear();
+
+  const char* get() const { return _string; };
+};
+
+#endif // SHARE_COMPILER_CHEAPSTRINGHOLDER_HPP

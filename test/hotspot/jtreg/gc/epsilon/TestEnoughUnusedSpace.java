@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 7198073 7197662
- * @summary Tests that user preferences are stored in the permanent storage
- * @library /test/lib
- * @build jdk.test.lib.process.* CheckUserPrefFirst CheckUserPrefLater
- * @run main CheckUserPrefsStorage
+package gc.epsilon;
+
+/**
+ * @test TestEnoughUnusedSpace
+ * @requires vm.gc.Epsilon
+ * @summary Epsilon should allocates object successfully if it has enough space.
+ * @run main/othervm -Xms64M -Xmx128M -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+UseEpsilonGC gc.epsilon.TestEnoughUnusedSpace
  */
 
-import jdk.test.lib.process.ProcessTools;
+public class TestEnoughUnusedSpace {
+    static volatile Object arr;
 
-public class CheckUserPrefsStorage {
-
-    public static void main(String[] args) throws Throwable {
-        // First to create and store a user preference
-        run("CheckUserPrefFirst");
-        // Then check that preferences stored by CheckUserPrefFirst can be retrieved
-        run("CheckUserPrefLater");
-    }
-
-    public static void run(String testName) throws Exception {
-        ProcessTools.executeTestJava("-Djava.util.prefs.userRoot=.", testName)
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldHaveExitValue(0);
+    public static void main(String[] args) {
+        // Create an array about 90M. It should be created successfully
+        // instead of throwing OOME, because 90M is smaller than 128M.
+        arr = new byte[90 * 1024 * 1024];
     }
 }
