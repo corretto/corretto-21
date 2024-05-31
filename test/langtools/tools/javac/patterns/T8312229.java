@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-#ifndef SHARE_GC_SHARED_ISGCACTIVEMARK_HPP
-#define SHARE_GC_SHARED_ISGCACTIVEMARK_HPP
-
-#include "memory/allocation.hpp"
-
-// This class provides a method for block structured setting of the
-// _is_stw_gc_active state without requiring accessors in CollectedHeap
-
-class IsSTWGCActiveMark : public StackObj {
- public:
-  IsSTWGCActiveMark();
-  ~IsSTWGCActiveMark();
-};
-
-class DisableIsSTWGCActiveMark : public StackObj {
- public:
-  DisableIsSTWGCActiveMark();
-  ~DisableIsSTWGCActiveMark();
-};
-
-#endif // SHARE_GC_SHARED_ISGCACTIVEMARK_HPP
+ /*
+ * @test
+ * @bug 8312229
+ * @summary Ensure javac does not crash when a variable is used from an anonymous class
+ * @compile T8312229.java
+ */
+public class T8312229 {
+    void test(Object o) {
+        Runnable r = () -> {
+            var l = switch (o) {
+                default -> {
+                    Integer i = 42;
+                    yield new Runnable() {
+                        public void run() {
+                            i.toString(); // should not crash here
+                        }
+                    };
+                }
+            };
+        };
+    }
+}
