@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,9 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/isGCActiveMark.hpp"
-#include "memory/universe.hpp"
-#include "utilities/debug.hpp"
+#include "jni.h"
 
-// This class provides a method for block structured setting of the
-// _is_stw_gc_active state without requiring accessors in CollectedHeap
-
-IsSTWGCActiveMark::IsSTWGCActiveMark() {
-  CollectedHeap* heap = Universe::heap();
-  assert(!heap->is_stw_gc_active(), "Not reentrant");
-  heap->_is_stw_gc_active = true;
-}
-
-IsSTWGCActiveMark::~IsSTWGCActiveMark() {
-  CollectedHeap* heap = Universe::heap();
-  assert(heap->is_stw_gc_active(), "Sanity");
-  heap->_is_stw_gc_active = false;
-}
+JNIEXPORT
+void JNICALL Java_compiler_calls_NativeCalls_emptyStaticNative(JNIEnv* env, jclass jclazz) {}
