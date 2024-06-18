@@ -567,6 +567,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_no_progress_count(0),
   _age_census(nullptr),
   _cancel_requested_time(0),
+  _update_refs_iterator(this),
   _young_generation(nullptr),
   _global_generation(nullptr),
   _old_generation(nullptr),
@@ -918,19 +919,13 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
   // Figure out size of new GCLAB, looking back at heuristics. Expand aggressively.
   size_t new_size = ShenandoahThreadLocalData::gclab_size(thread) * 2;
 
-  // Limit growth of GCLABs to ShenandoahMaxEvacLABRatio * the minimum size.  This enables more equitable distribution of
-  // available evacuation buidget between the many threads that are coordinating in the evacuation effort.
-  if (ShenandoahMaxEvacLABRatio > 0) {
-    log_debug(gc, free)("Allocate new gclab: " SIZE_FORMAT ", " SIZE_FORMAT, new_size, PLAB::min_size() * ShenandoahMaxEvacLABRatio);
-    new_size = MIN2(new_size, PLAB::min_size() * ShenandoahMaxEvacLABRatio);
-  }
-
   new_size = MIN2(new_size, PLAB::max_size());
   new_size = MAX2(new_size, PLAB::min_size());
 
   // Record new heuristic value even if we take any shortcut. This captures
   // the case when moderately-sized objects always take a shortcut. At some point,
   // heuristics should catch up with them.
+  log_debug(gc, free)("Set new GCLAB size: " SIZE_FORMAT, new_size);
   ShenandoahThreadLocalData::set_gclab_size(thread, new_size);
 
   if (new_size < size) {
@@ -1955,6 +1950,8 @@ void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
                             ShenandoahPhaseTimings::degen_gc_init_update_refs_manage_gclabs);
     gclabs_retire(ResizeTLAB);
   }
+
+  _update_refs_iterator.reset();
 }
 
 void ShenandoahHeap::propagate_gc_state_to_java_threads() {
@@ -2373,15 +2370,14 @@ private:
 
 void ShenandoahHeap::update_heap_references(bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
-  ShenandoahRegionIterator update_refs_iterator(this);
+
   if (concurrent) {
-    ShenandoahUpdateHeapRefsTask<true> task(&update_refs_iterator);
+    ShenandoahUpdateHeapRefsTask<true> task(&_update_refs_iterator);
     workers()->run_task(&task);
   } else {
-    ShenandoahUpdateHeapRefsTask<false> task(&update_refs_iterator);
+    ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator);
     workers()->run_task(&task);
   }
-  assert(cancelled_gc() || !update_refs_iterator.has_next(), "Should have finished update references");
 }
 
 class ShenandoahFinalUpdateRefsUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {

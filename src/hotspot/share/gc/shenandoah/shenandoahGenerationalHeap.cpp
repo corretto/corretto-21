@@ -33,14 +33,17 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
+#include "utilities/events.hpp"
 
 
 class ShenandoahGenerationalInitLogger : public ShenandoahInitLogger {
@@ -86,9 +89,7 @@ size_t ShenandoahGenerationalHeap::calculate_min_plab() {
 
 size_t ShenandoahGenerationalHeap::calculate_max_plab() {
   size_t MaxTLABSizeWords = ShenandoahHeapRegion::max_tlab_size_words();
-  return ((ShenandoahMaxEvacLABRatio > 0)?
-          align_down(MIN2(MaxTLABSizeWords, PLAB::min_size() * ShenandoahMaxEvacLABRatio), CardTable::card_size_in_words()):
-          align_down(MaxTLABSizeWords, CardTable::card_size_in_words()));
+  return align_down(MaxTLABSizeWords, CardTable::card_size_in_words());
 }
 
 // Returns size in bytes
@@ -392,51 +393,50 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
 
   assert(mode()->is_generational(), "PLABs only relevant to generational GC");
   const size_t plab_min_size = this->plab_min_size();
+  // PLABs are aligned to card boundaries to avoid synchronization with concurrent
+  // allocations in other PLABs.
   const size_t min_size = (size > plab_min_size)? align_up(size, CardTable::card_size_in_words()): plab_min_size;
 
-  // Figure out size of new PLAB, looking back at heuristics. Expand aggressively.  PLABs must align on size
-  // of card table in order to avoid the need for synchronization when registering newly allocated objects within
-  // the card table.
+  // Figure out size of new PLAB, using value determined at last refill.
   size_t cur_size = ShenandoahThreadLocalData::plab_size(thread);
   if (cur_size == 0) {
     cur_size = plab_min_size;
   }
 
-  // Limit growth of PLABs to the smaller of ShenandoahMaxEvacLABRatio * the minimum size and ShenandoahHumongousThreshold.
-  // This minimum value is represented by generational_heap->plab_max_size().  Enforcing this limit enables more equitable
-  // distribution of available evacuation budget between the many threads that are coordinating in the evacuation effort.
+  // Expand aggressively, doubling at each refill in this epoch, ceiling at plab_max_size()
   size_t future_size = MIN2(cur_size * 2, plab_max_size());
-  assert(is_aligned(future_size, CardTable::card_size_in_words()), "Align by design, future_size: " SIZE_FORMAT
-          ", alignment: " SIZE_FORMAT ", cur_size: " SIZE_FORMAT ", max: " SIZE_FORMAT,
+  // Doubling, starting at a card-multiple, should give us a card-multiple. (Ceiling and floor
+  // are card multiples.)
+  assert(is_aligned(future_size, CardTable::card_size_in_words()), "Card multiple by construction, future_size: " SIZE_FORMAT
+          ", card_size: " SIZE_FORMAT ", cur_size: " SIZE_FORMAT ", max: " SIZE_FORMAT,
          future_size, (size_t) CardTable::card_size_in_words(), cur_size, plab_max_size());
 
   // Record new heuristic value even if we take any shortcut. This captures
   // the case when moderately-sized objects always take a shortcut. At some point,
   // heuristics should catch up with them.  Note that the requested cur_size may
   // not be honored, but we remember that this is the preferred size.
+  log_debug(gc, free)("Set new PLAB size: " SIZE_FORMAT, future_size);
   ShenandoahThreadLocalData::set_plab_size(thread, future_size);
   if (cur_size < size) {
     // The PLAB to be allocated is still not large enough to hold the object. Fall back to shared allocation.
     // This avoids retiring perfectly good PLABs in order to represent a single large object allocation.
+    log_debug(gc, free)("Current PLAB size (" SIZE_FORMAT ") is too small for " SIZE_FORMAT, cur_size, size);
     return nullptr;
   }
 
   // Retire current PLAB, and allocate a new one.
   PLAB* plab = ShenandoahThreadLocalData::plab(thread);
   if (plab->words_remaining() < plab_min_size) {
-    // Retire current PLAB, and allocate a new one.
-    // CAUTION: retire_plab may register the remnant filler object with the remembered set scanner without a lock.  This
-    // is safe iff it is assured that each PLAB is a whole-number multiple of card-mark memory size and each PLAB is
-    // aligned with the start of a card's memory range.
+    // Retire current PLAB. This takes care of any PLAB book-keeping.
+    // retire_plab() registers the remnant filler object with the remembered set scanner without a lock.
+    // Since PLABs are card-aligned, concurrent registrations in other PLABs don't interfere.
     retire_plab(plab, thread);
 
     size_t actual_size = 0;
-    // allocate_new_plab resets plab_evacuated and plab_promoted and disables promotions if old-gen available is
-    // less than the remaining evacuation need.  It also adjusts plab_preallocated and expend_promoted if appropriate.
     HeapWord* plab_buf = allocate_new_plab(min_size, cur_size, &actual_size);
     if (plab_buf == nullptr) {
       if (min_size == plab_min_size) {
-        // Disable plab promotions for this thread because we cannot even allocate a plab of minimal size.  This allows us
+        // Disable PLAB promotions for this thread because we cannot even allocate a minimal PLAB. This allows us
         // to fail faster on subsequent promotion attempts.
         ShenandoahThreadLocalData::disable_plab_promotions(thread);
       }
@@ -465,7 +465,7 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
     }
     return plab->allocate(size);
   } else {
-    // If there's still at least min_size() words available within the current plab, don't retire it.  Let's gnaw
+    // If there's still at least min_size() words available within the current plab, don't retire it.  Let's nibble
     // away on this plab as long as we can.  Meanwhile, return nullptr to force this particular allocation request
     // to be satisfied with a shared allocation.  By packing more promotions into the previously allocated PLAB, we
     // reduce the likelihood of evacuation failures, and we reduce the need for downsizing our PLABs.
@@ -927,20 +927,102 @@ private:
 
 void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
-  uint nworkers = workers()->active_workers();
+  const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
-  ShenandoahRegionIterator update_refs_iterator(this);
   if (concurrent) {
-    ShenandoahGenerationalUpdateHeapRefsTask<true> task(&update_refs_iterator, &work_list);
+    ShenandoahGenerationalUpdateHeapRefsTask<true> task(&_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   } else {
-    ShenandoahGenerationalUpdateHeapRefsTask<false> task(&update_refs_iterator, &work_list);
+    ShenandoahGenerationalUpdateHeapRefsTask<false> task(&_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   }
-  assert(cancelled_gc() || !update_refs_iterator.has_next(), "Should have finished update references");
 
-  if (ShenandoahEnableCardStats) { // generational check proxy
+  if (ShenandoahEnableCardStats) {
+    // Only do this if we are collecting card stats
     assert(card_scan() != nullptr, "Card table must exist when card stats are enabled");
     card_scan()->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
+  }
+}
+
+void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
+  shenandoah_assert_heaplocked_or_safepoint();
+  if (is_concurrent_old_mark_in_progress()) {
+    // This is still necessary for degenerated cycles because the degeneration point may occur
+    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_updaterefs for
+    // a more detailed explanation.
+    old_generation()->transfer_pointers_from_satb();
+  }
+
+  // We defer generation resizing actions until after cset regions have been recycled.
+  TransferResult result = balance_generations();
+  LogTarget(Info, gc, ergo) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    result.print_on("Degenerated GC", &ls);
+  }
+
+  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
+  // transient state. Otherwise, these actions have no effect.
+  reset_generation_reserves();
+
+  if (!old_generation()->is_parseable()) {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
+    coalesce_and_fill_old_regions(false);
+  }
+}
+
+void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
+  if (!old_generation()->is_parseable()) {
+    // Class unloading may render the card offsets unusable, so we must rebuild them before
+    // the next remembered set scan. We _could_ let the control thread do this sometime after
+    // the global cycle has completed and before the next young collection, but under memory
+    // pressure the control thread may not have the time (that is, because it's running back
+    // to back GCs). In that scenario, we would have to make the old regions parsable before
+    // we could start a young collection. This could delay the start of the young cycle and
+    // throw off the heuristics.
+    entry_global_coalesce_and_fill();
+  }
+
+  TransferResult result;
+  {
+    ShenandoahHeapLocker locker(lock());
+
+    result = balance_generations();
+    reset_generation_reserves();
+  }
+
+  LogTarget(Info, gc, ergo) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    result.print_on("Concurrent GC", &ls);
+  }
+}
+
+void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
+  const char* msg = "Coalescing and filling old regions";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
+
+  TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
+  EventMark em("%s", msg);
+  ShenandoahWorkerScope scope(workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              "concurrent coalesce and fill");
+
+  coalesce_and_fill_old_regions(true);
+}
+
+void ShenandoahGenerationalHeap::update_region_ages() {
+  ShenandoahMarkingContext *ctx = complete_marking_context();
+  for (size_t i = 0; i < num_regions(); i++) {
+    ShenandoahHeapRegion *r = get_region(i);
+    if (r->is_active() && r->is_young()) {
+      HeapWord* tams = ctx->top_at_mark_start(r);
+      HeapWord* top = r->top();
+      if (top > tams) {
+        r->reset_age();
+      } else if (is_aging_cycle()) {
+        r->increment_age();
+      }
+    }
   }
 }
