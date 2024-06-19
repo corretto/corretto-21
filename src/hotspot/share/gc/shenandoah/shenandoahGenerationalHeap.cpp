@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
@@ -80,6 +81,11 @@ protected:
 ShenandoahGenerationalHeap* ShenandoahGenerationalHeap::heap() {
   shenandoah_assert_generational();
   CollectedHeap* heap = Universe::heap();
+  return cast(heap);
+}
+
+ShenandoahGenerationalHeap* ShenandoahGenerationalHeap::cast(CollectedHeap* heap) {
+  shenandoah_assert_generational();
   return checked_cast<ShenandoahGenerationalHeap*>(heap);
 }
 
@@ -99,6 +105,7 @@ size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc(Thread *thread) const {
 
 ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
   ShenandoahHeap(policy),
+  _age_census(nullptr),
   _min_plab_size(calculate_min_plab()),
   _max_plab_size(calculate_max_plab()),
   _regulator_thread(nullptr),
@@ -108,9 +115,34 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
 }
 
+void ShenandoahGenerationalHeap::post_initialize() {
+  ShenandoahHeap::post_initialize();
+  _age_census = new ShenandoahAgeCensus();
+}
+
 void ShenandoahGenerationalHeap::print_init_logger() const {
   ShenandoahGenerationalInitLogger logger;
   logger.print_all();
+}
+
+void ShenandoahGenerationalHeap::initialize_heuristics() {
+  // Initialize global generation and heuristics even in generational mode.
+  ShenandoahHeap::initialize_heuristics();
+
+  // Max capacity is the maximum _allowed_ capacity. That is, the maximum allowed capacity
+  // for old would be total heap - minimum capacity of young. This means the sum of the maximum
+  // allowed for old and young could exceed the total heap size. It remains the case that the
+  // _actual_ capacity of young + old = total.
+  _generation_sizer.heap_size_changed(max_capacity());
+  size_t initial_capacity_young = _generation_sizer.max_young_size();
+  size_t max_capacity_young = _generation_sizer.max_young_size();
+  size_t initial_capacity_old = max_capacity() - max_capacity_young;
+  size_t max_capacity_old = max_capacity() - initial_capacity_young;
+
+  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young, initial_capacity_young);
+  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old, initial_capacity_old);
+  _young_generation->initialize_heuristics(mode());
+  _old_generation->initialize_heuristics(mode());
 }
 
 void ShenandoahGenerationalHeap::initialize_serviceability() {
@@ -523,7 +555,7 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
     // safely walk the region backing the plab.
     log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
                   plab->waste() - original_waste, p2i(top));
-    card_scan()->register_object_without_lock(top);
+    old_generation()->card_scan()->register_object_without_lock(top);
   }
 }
 
@@ -715,7 +747,7 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 template<bool CONCURRENT>
 class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
 private:
-  ShenandoahHeap* _heap;
+  ShenandoahGenerationalHeap* _heap;
   ShenandoahRegionIterator* _regions;
   ShenandoahRegionChunkIterator* _work_chunks;
 
@@ -723,7 +755,7 @@ public:
   explicit ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahRegionIterator* regions,
                                                     ShenandoahRegionChunkIterator* work_chunks) :
           WorkerTask("Shenandoah Update References"),
-          _heap(ShenandoahHeap::heap()),
+          _heap(ShenandoahGenerationalHeap::heap()),
           _regions(regions),
           _work_chunks(work_chunks)
   {
@@ -817,7 +849,7 @@ private:
       // The remembered set workload is better balanced between threads, so threads that are "behind" can catch up with other
       // threads during this phase, allowing all threads to work more effectively in parallel.
       struct ShenandoahRegionChunk assignment;
-      RememberedScanner* scanner = _heap->card_scan();
+      RememberedScanner* scanner = _heap->old_generation()->card_scan();
 
       while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
         // Keep grabbing next work chunk to process until finished, or asked to yield
@@ -939,9 +971,79 @@ void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
 
   if (ShenandoahEnableCardStats) {
     // Only do this if we are collecting card stats
-    assert(card_scan() != nullptr, "Card table must exist when card stats are enabled");
-    card_scan()->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
+    RememberedScanner* card_scan = old_generation()->card_scan();
+    assert(card_scan != nullptr, "Card table must exist when card stats are enabled");
+    card_scan->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
   }
+}
+
+namespace ShenandoahCompositeRegionClosure {
+  template<typename C1, typename C2>
+  class Closure : public ShenandoahHeapRegionClosure {
+  private:
+    C1 &_c1;
+    C2 &_c2;
+
+  public:
+    Closure(C1 &c1, C2 &c2) : ShenandoahHeapRegionClosure(), _c1(c1), _c2(c2) {}
+
+    void heap_region_do(ShenandoahHeapRegion* r) override {
+      _c1.heap_region_do(r);
+      _c2.heap_region_do(r);
+    }
+
+    bool is_thread_safe() override {
+      return _c1.is_thread_safe() && _c2.is_thread_safe();
+    }
+  };
+
+
+  template<typename C1, typename C2>
+  Closure<C1, C2> of(C1 &c1, C2 &c2) {
+    return Closure<C1, C2>(c1, c2);
+  }
+}
+
+class ShenandoahUpdateRegionAges : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahMarkingContext* _ctx;
+
+public:
+  explicit ShenandoahUpdateRegionAges(ShenandoahMarkingContext* ctx) : _ctx(ctx) { }
+
+  void heap_region_do(ShenandoahHeapRegion* r) override {
+    // Maintenance of region age must follow evacuation in order to account for
+    // evacuation allocations within survivor regions.  We consult region age during
+    // the subsequent evacuation to determine whether certain objects need to
+    // be promoted.
+    if (r->is_young() && r->is_active()) {
+      HeapWord *tams = _ctx->top_at_mark_start(r);
+      HeapWord *top = r->top();
+
+      // Allocations move the watermark when top moves.  However, compacting
+      // objects will sometimes lower top beneath the watermark, after which,
+      // attempts to read the watermark will assert out (watermark should not be
+      // higher than top).
+      if (top > tams) {
+        // There have been allocations in this region since the start of the cycle.
+        // Any objects new to this region must not assimilate elevated age.
+        r->reset_age();
+      } else if (ShenandoahGenerationalHeap::heap()->is_aging_cycle()) {
+        r->increment_age();
+      }
+    }
+  }
+
+  bool is_thread_safe() override {
+    return true;
+  }
+};
+
+void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
+  ShenandoahSynchronizePinnedRegionStates pins;
+  ShenandoahUpdateRegionAges ages(active_generation()->complete_marking_context());
+  auto cl = ShenandoahCompositeRegionClosure::of(pins, ages);
+  parallel_heap_region_iterate(&cl);
 }
 
 void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
@@ -1011,18 +1113,7 @@ void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
   coalesce_and_fill_old_regions(true);
 }
 
-void ShenandoahGenerationalHeap::update_region_ages() {
-  ShenandoahMarkingContext *ctx = complete_marking_context();
-  for (size_t i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion *r = get_region(i);
-    if (r->is_active() && r->is_young()) {
-      HeapWord* tams = ctx->top_at_mark_start(r);
-      HeapWord* top = r->top();
-      if (top > tams) {
-        r->reset_age();
-      } else if (is_aging_cycle()) {
-        r->increment_age();
-      }
-    }
-  }
+void ShenandoahGenerationalHeap::update_region_ages(ShenandoahMarkingContext* ctx) {
+  ShenandoahUpdateRegionAges cl(ctx);
+  parallel_heap_region_iterate(&cl);
 }

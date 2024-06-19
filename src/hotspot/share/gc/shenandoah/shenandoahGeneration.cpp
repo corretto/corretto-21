@@ -89,36 +89,32 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
 // write-copy.
 class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
  private:
-  ShenandoahHeap* _heap;
   RememberedScanner* _scanner;
  public:
-  ShenandoahMergeWriteTable() : _heap(ShenandoahHeap::heap()), _scanner(_heap->card_scan()) {}
+  ShenandoahMergeWriteTable(RememberedScanner* scanner) : _scanner(scanner) {}
 
-  virtual void heap_region_do(ShenandoahHeapRegion* r) override {
+  void heap_region_do(ShenandoahHeapRegion* r) override {
     assert(r->is_old(), "Don't waste time doing this for non-old regions");
     _scanner->merge_write_table(r->bottom(), ShenandoahHeapRegion::region_size_words());
   }
 
-  virtual bool is_thread_safe() override {
+  bool is_thread_safe() override {
     return true;
   }
 };
 
-class ShenandoahSquirrelAwayCardTable: public ShenandoahHeapRegionClosure {
+class ShenandoahCopyWriteCardTableToRead: public ShenandoahHeapRegionClosure {
  private:
-  ShenandoahHeap* _heap;
   RememberedScanner* _scanner;
  public:
-  ShenandoahSquirrelAwayCardTable() :
-    _heap(ShenandoahHeap::heap()),
-    _scanner(_heap->card_scan()) {}
+  ShenandoahCopyWriteCardTableToRead(RememberedScanner* scanner) : _scanner(scanner) {}
 
-  void heap_region_do(ShenandoahHeapRegion* region) {
+  void heap_region_do(ShenandoahHeapRegion* region) override {
     assert(region->is_old(), "Don't waste time doing this for non-old regions");
     _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
   }
 
-  bool is_thread_safe() { return true; }
+  bool is_thread_safe() override { return true; }
 };
 
 void ShenandoahGeneration::confirm_heuristics_mode() {
@@ -207,13 +203,14 @@ void ShenandoahGeneration::reset_mark_bitmap() {
 // onto the read-table and will then clear the write-table.
 void ShenandoahGeneration::swap_remembered_set() {
   // Must be sure that marking is complete before we swap remembered set.
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
   shenandoah_assert_safepoint();
 
-  // TODO: Eventually, we want replace this with a constant-time exchange of pointers.
-  ShenandoahSquirrelAwayCardTable task;
-  heap->old_generation()->parallel_heap_region_iterate(&task);
+  // TODO: Eventually, we want to replace this with a constant-time exchange of pointers.
+  ShenandoahOldGeneration* old_generation = heap->old_generation();
+  ShenandoahCopyWriteCardTableToRead task(old_generation->card_scan());
+  old_generation->parallel_heap_region_iterate(&task);
 }
 
 // Copy the write-version of the card-table into the read-version, clearing the
@@ -221,12 +218,13 @@ void ShenandoahGeneration::swap_remembered_set() {
 // worker threads.
 void ShenandoahGeneration::merge_write_table() {
   // This should only happen for degenerated cycles
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
   shenandoah_assert_safepoint();
 
-  ShenandoahMergeWriteTable task;
-  heap->old_generation()->parallel_heap_region_iterate(&task);
+  ShenandoahOldGeneration* old_generation = heap->old_generation();
+  ShenandoahMergeWriteTable task(old_generation->card_scan());
+  old_generation->parallel_heap_region_iterate(&task);
 }
 
 void ShenandoahGeneration::prepare_gc() {
@@ -243,6 +241,7 @@ void ShenandoahGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClos
 }
 
 void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap) {
+  shenandoah_assert_generational();
 
   ShenandoahOldGeneration* const old_generation = heap->old_generation();
   ShenandoahYoungGeneration* const young_generation = heap->young_generation();
@@ -356,6 +355,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 // that young_generation->available() now knows about recently discovered immediate garbage.
 //
 void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap, ShenandoahCollectionSet* const collection_set) {
+  shenandoah_assert_generational();
   // We may find that old_evacuation_reserve and/or loaned_for_young_evacuation are not fully consumed, in which case we may
   //  be able to increase regions_available_to_loan
 
@@ -455,7 +455,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   }
 
   if (regions_to_xfer > 0) {
-    bool result = heap->generation_sizer()->transfer_to_young(regions_to_xfer);
+    bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
     assert(excess_old > regions_to_xfer * region_size_bytes, "Cannot xfer more than excess old");
     excess_old -= regions_to_xfer * region_size_bytes;
     log_info(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",
@@ -677,14 +677,21 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     // young regions and sum the volume of objects between TAMS and top.
     ShenandoahUpdateCensusZeroCohortClosure age0_cl(complete_marking_context());
     heap->young_generation()->heap_region_iterate(&age0_cl);
-    size_t age0_pop = age0_cl.get_population();
+    size_t age0_pop = age0_cl.get_age0_population();
 
-    // Age table updates
-    ShenandoahAgeCensus* census = heap->age_census();
-    census->prepare_for_census_update();
     // Update the global census, including the missed age 0 cohort above,
-    // along with the census during marking, and compute the tenuring threshold
+    // along with the census done during marking, and compute the tenuring threshold.
+    ShenandoahAgeCensus* census = ShenandoahGenerationalHeap::heap()->age_census();
     census->update_census(age0_pop);
+#ifndef PRODUCT
+    size_t total_pop = age0_cl.get_total_population();
+    size_t total_census = census->get_total();
+    // Usually total_pop > total_census, but not by too much.
+    // We use integer division so anything up to just less than 2 is considered
+    // reasonable, and the "+1" is to avoid divide-by-zero.
+    assert((total_pop+1)/(total_census+1) ==  1, "Extreme divergence: "
+           SIZE_FORMAT "/" SIZE_FORMAT, total_pop, total_census);
+#endif
   }
 
   {
@@ -833,7 +840,7 @@ ShenandoahObjToScanQueueSet* ShenandoahGeneration::old_gen_task_queues() const {
 void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   assert(is_young(), "Should only scan remembered set for young generation.");
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
   uint nworkers = heap->workers()->active_workers();
   reserve_task_queues(nworkers);
 
@@ -843,8 +850,9 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
   if (ShenandoahEnableCardStats) {
-    assert(heap->card_scan() != nullptr, "Not generational");
-    heap->card_scan()->log_card_stats(nworkers, CARD_STAT_SCAN_RS);
+    RememberedScanner* scanner = heap->old_generation()->card_scan();
+    assert(scanner != nullptr, "Not generational");
+    scanner->log_card_stats(nworkers, CARD_STAT_SCAN_RS);
   }
 }
 

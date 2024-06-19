@@ -130,13 +130,14 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       gclab->retire();
     }
 
-    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-    // CAUTION: retire_plab may register the remnant filler object with the remembered set scanner without a lock.
-    // This is safe iff it is assured that each PLAB is a whole-number multiple of card-mark memory size and each
-    // PLAB is aligned with the start of each card's memory range.
-    // TODO: Assert this in retire_plab?
-    if (plab != nullptr) {
-      ShenandoahGenerationalHeap::heap()->retire_plab(plab);
+    if (ShenandoahCardBarrier) {
+      PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+      // retire_plab may register the remnant filler object with the remembered set scanner without a lock.
+      // This is safe because it is assured that each PLAB is a whole-number multiple of card-mark memory size and each
+      // PLAB is aligned with the start of each card's memory range.
+      if (plab != nullptr) {
+        ShenandoahGenerationalHeap::heap()->retire_plab(plab);
+      }
     }
 
     // SATB protocol requires to keep alive reachable oops from roots at the beginning of GC
@@ -173,6 +174,6 @@ void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
   // If compressed oops were not being used, these should already be aligned
   assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
          "Expected heap word alignment of start and end");
-  _heap->card_scan()->mark_range_as_dirty(aligned_start, (aligned_end - aligned_start));
+  _heap->old_generation()->card_scan()->mark_range_as_dirty(aligned_start, (aligned_end - aligned_start));
 }
 
