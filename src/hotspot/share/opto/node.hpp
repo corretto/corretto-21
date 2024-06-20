@@ -1116,7 +1116,14 @@ public:
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
 
-//----------------- Code Generation
+  // Returns a clone of the current node that's pinned (if the current node is not) for nodes found in array accesses
+  // (Load and range check CastII nodes).
+  // This is used when an array access is made dependent on 2 or more range checks (range check smearing or Loop Predication).
+  virtual Node* pin_array_access_node() const {
+    return nullptr;
+  }
+
+  //----------------- Code Generation
 
   // Ideal register class for Matching.  Zero means unmatched instruction
   // (these are cloned instead of converted to machine nodes).
@@ -1525,8 +1532,8 @@ Node* Node::last_out(DUIterator_Last& i) const {
 class SimpleDUIterator : public StackObj {
  private:
   Node* node;
-  DUIterator_Fast i;
   DUIterator_Fast imax;
+  DUIterator_Fast i;
  public:
   SimpleDUIterator(Node* n): node(n), i(n->fast_outs(imax)) {}
   bool has_next() { return i < imax; }
