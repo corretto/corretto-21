@@ -85,7 +85,7 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
     _heap->lock()->lock(false);
     ShenandoahResetRegions reset;
     _heap->heap_region_iterate(&reset);
-    _heap->old_generation()->set_capacity(ShenandoahHeapRegion::region_size_bytes() * 10);
+    _heap->old_generation()->increase_capacity(ShenandoahHeapRegion::region_size_bytes() * 10);
     _heap->old_generation()->set_evacuation_reserve(ShenandoahHeapRegion::region_size_bytes() * 4);
     _heuristics->abandon_collection_candidates();
     _collection_set->clear();
