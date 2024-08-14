@@ -325,7 +325,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   ShenandoahConcurrentGC gc(heap->global_generation(), false);
   if (gc.collect(cause)) {
-    // Cycle is complete
+    // Cycle is complete.  There were no failed allocation requests and no degeneration, so count this as good progress.
+    heap->notify_gc_progress();
     heap->global_generation()->heuristics()->record_success_concurrent();
     heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
     heap->log_heap_status("At end of GC");
