@@ -213,11 +213,7 @@ void VM_Version::initialize() {
     }
   }
 
-  // Neoverse
-  //   N1: 0xd0c
-  //   N2: 0xd49
-  //   V1: 0xd40
-  //   V2: 0xd4f
+  // Neoverse N1, N2, V1, V2
   if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
                           model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
@@ -469,16 +465,12 @@ void VM_Version::initialize() {
              strcmp(UseBranchProtection, "pac-ret") == 0) {
     _rop_protection = false;
     // Enable ROP-protection if
-    // 1) this code has been built with branch-protection,
-    // 2) the CPU/OS supports it, and
-    // 3) incompatible VMContinuations isn't enabled.
+    // 1) this code has been built with branch-protection and
+    // 2) the CPU/OS supports it
 #ifdef __ARM_FEATURE_PAC_DEFAULT
     if (!VM_Version::supports_paca()) {
       // Disable PAC to prevent illegal instruction crashes.
       warning("ROP-protection specified, but not supported on this CPU. Disabling ROP-protection.");
-    } else if (VMContinuations) {
-      // Not currently compatible with continuation freeze/thaw.
-      warning("ROP-protection is incompatible with VMContinuations. Disabling ROP-protection.");
     } else {
       _rop_protection = true;
     }
@@ -493,12 +485,6 @@ void VM_Version::initialize() {
     // Determine the mask of address bits used for PAC. Clear bit 55 of
     // the input to make it look like a user address.
     _pac_mask = (uintptr_t)pauth_strip_pointer((address)~(UINT64_C(1) << 55));
-
-    // The frame pointer must be preserved for ROP protection.
-    if (FLAG_IS_DEFAULT(PreserveFramePointer) == false && PreserveFramePointer == false ) {
-      vm_exit_during_initialization(err_msg("PreserveFramePointer cannot be disabled for ROP-protection"));
-    }
-    PreserveFramePointer = true;
   }
 
 #ifdef COMPILER2
