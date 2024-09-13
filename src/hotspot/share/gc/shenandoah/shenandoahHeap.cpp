@@ -388,7 +388,6 @@ jint ShenandoahHeap::initialize() {
   {
     ShenandoahHeapLocker locker(lock());
 
-
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
