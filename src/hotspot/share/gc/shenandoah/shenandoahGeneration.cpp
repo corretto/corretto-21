@@ -89,9 +89,9 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
 // write-copy.
 class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
  private:
-  RememberedScanner* _scanner;
+  ShenandoahScanRemembered* _scanner;
  public:
-  ShenandoahMergeWriteTable(RememberedScanner* scanner) : _scanner(scanner) {}
+  ShenandoahMergeWriteTable(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
     assert(r->is_old(), "Don't waste time doing this for non-old regions");
@@ -105,9 +105,9 @@ class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
 
 class ShenandoahCopyWriteCardTableToRead: public ShenandoahHeapRegionClosure {
  private:
-  RememberedScanner* _scanner;
+  ShenandoahScanRemembered* _scanner;
  public:
-  ShenandoahCopyWriteCardTableToRead(RememberedScanner* scanner) : _scanner(scanner) {}
+  ShenandoahCopyWriteCardTableToRead(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
 
   void heap_region_do(ShenandoahHeapRegion* region) override {
     assert(region->is_old(), "Don't waste time doing this for non-old regions");
@@ -850,14 +850,14 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
   if (ShenandoahEnableCardStats) {
-    RememberedScanner* scanner = heap->old_generation()->card_scan();
+    ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
     assert(scanner != nullptr, "Not generational");
     scanner->log_card_stats(nworkers, CARD_STAT_SCAN_RS);
   }
 }
 
 size_t ShenandoahGeneration::increment_affiliated_region_count() {
-  shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  shenandoah_assert_heaplocked_or_safepoint();
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
@@ -866,31 +866,29 @@ size_t ShenandoahGeneration::increment_affiliated_region_count() {
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count() {
-  shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  shenandoah_assert_heaplocked_or_safepoint();
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
   _affiliated_region_count--;
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used + _humongous_waste <= _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
   return _affiliated_region_count;
 }
 
 size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
-  shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  shenandoah_assert_heaplocked_or_safepoint();
   _affiliated_region_count += delta;
   return _affiliated_region_count;
 }
 
 size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
-  shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(_affiliated_region_count >= delta, "Affiliated region count cannot be negative");
 
   _affiliated_region_count -= delta;
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used + _humongous_waste <= _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
   return _affiliated_region_count;
@@ -922,8 +920,7 @@ void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
 }
 
 void ShenandoahGeneration::decrease_used(size_t bytes) {
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used >= bytes), "cannot reduce bytes used by generation below zero");
   Atomic::sub(&_used, bytes);
 }
@@ -970,15 +967,13 @@ size_t ShenandoahGeneration::increase_capacity(size_t increment) {
   // We do not enforce that new capacity >= heap->max_size_for(this).  The maximum generation size is treated as a rule of thumb
   // which may be violated during certain transitions, such as when we are forcing transfers for the purpose of promoting regions
   // in place.
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_max_capacity + increment <= ShenandoahHeap::heap()->max_capacity()), "Generation cannot be larger than heap size");
   assert(increment % ShenandoahHeapRegion::region_size_bytes() == 0, "Generation capacity must be multiple of region size");
   _max_capacity += increment;
 
   // This detects arithmetic wraparound on _used
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
          "Affiliated regions must hold more than what is currently used");
   return _max_capacity;
@@ -1002,15 +997,12 @@ size_t ShenandoahGeneration::decrease_capacity(size_t decrement) {
   _max_capacity -= decrement;
 
   // This detects arithmetic wraparound on _used
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
          "Affiliated regions must hold more than what is currently used");
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used <= _max_capacity), "Cannot use more than capacity");
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() <= _max_capacity),
          "Cannot use more than capacity");
   return _max_capacity;
