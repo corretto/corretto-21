@@ -441,7 +441,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
     }
     BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
     if (ShenandoahCardBarrier) {
-      store_check(masm, r3);
+      store_check(masm, tmp3);
     }
   }
 
