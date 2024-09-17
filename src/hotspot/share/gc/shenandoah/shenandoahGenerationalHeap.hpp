@@ -28,7 +28,6 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "memory/universe.hpp"
-#include "utilities/checkedCast.hpp"
 
 class PLAB;
 class ShenandoahRegulatorThread;

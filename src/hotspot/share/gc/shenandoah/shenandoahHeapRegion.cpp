@@ -576,6 +576,10 @@ void ShenandoahHeapRegion::recycle() {
   reset_alloc_metadata();
 
   heap->marking_context()->reset_top_at_mark_start(this);
+  if (heap->is_bitmap_slice_committed(this)) {
+    heap->marking_context()->clear_bitmap(this);
+  }
+
   set_update_watermark(bottom());
 
   make_empty();
@@ -862,8 +866,6 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
       reset_age();
       break;
     case OLD_GENERATION:
-      // TODO: should we reset_age() for OLD as well?  Examine invocations of set_affiliation(). Some contexts redundantly
-      //       invoke reset_age().
       break;
     default:
       ShouldNotReachHere();
