@@ -93,8 +93,10 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/stress/TestStressG1Humongous.java 8286554 windows-x64
-gc/shenandoah/TestAllocIntArrays.java#iu-aggressive 8289220 generic-all
+gc/shenandoah/TestAllocIntArrays.java#iu-aggressive 8289220 generic-all  # Will probably not backport this PR to JDK21
 gc/shenandoah/TestAllocIntArrays.java#aggressive 8289220 generic-all
+gc/shenandoah/TestSieveObjects.java#aggressive 8289220 generic-all
+gc/shenandoah/TestJcmdHeapDump.java#iu-aggressive 8336685 generic-all    # Experimental IU mode to be removed
 
 #############################################################################
 
