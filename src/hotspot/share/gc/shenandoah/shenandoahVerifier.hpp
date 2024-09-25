@@ -215,6 +215,7 @@ public:
 
   void verify_before_concmark();
   void verify_after_concmark();
+  void verify_after_concmark_with_promotions();
   void verify_before_evacuation();
   void verify_during_evacuation();
   void verify_after_evacuation();
