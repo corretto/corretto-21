@@ -50,7 +50,7 @@
 %endif
 # If we need to rev the package for something outside of what the
 # Corretto team is doing, we can define release_ext.
-# %global release_ext  1
+%global release_ext  0
 
 %global boot_jdk_major_version    $boot_jdk_major_version
 
@@ -145,9 +145,9 @@ BuildRequires: libXtst-devel
 BuildRequires: pkgconfig
 BuildRequires: xorg-x11-proto-devel
 
-%if %{with bootjdk}
-BuildRequires: java-${boot_jdk_major_version}-devel
-%endif
+#%if %{with bootjdk}
+#BuildRequires: java-${boot_jdk_major_version}-devel
+#%endif
 
 Requires: libX11
 Requires: libXi
@@ -257,6 +257,19 @@ Amazon Corretto's packaging of the OpenJDK ${java_spec_version} debug symbols.
 
 %build
 
+# Bootstrap with Corretto 20
+%ifarch aarch64
+curl -L -o corretto.tar.gz https://corretto.aws/downloads/latest/amazon-corretto-20-aarch64-linux-jdk.tar.gz
+echo "4622de17e4afcb98e05f21a8be81d98500bbfc4a15c0c5a5420b39b816ba4f13  corretto.tar.gz" > corretto.tar.gz.sha256
+%else
+curl -L -o corretto.tar.gz https://corretto.aws/downloads/latest/amazon-corretto-20-x64-linux-jdk.tar.gz
+echo " 3b60fe04966d0aa762bf1fc2974ad239cf7ab887a657a9e7e3c75a9310e34db2 corretto.tar.gz" > corretto.tar.gz.sha256
+%endif
+sha256sum -c corretto.tar.gz.sha256
+mkdir -p corretto-bootstrap-jdk
+tar -xf corretto.tar.gz --strip-component=1 -C corretto-bootstrap-jdk
+
+
 %if "%{dist}" == ".amzn2" || "%{dist}" == ".amzn2int"
 # AmazonLinux ships with GifLib 4.x which does not define GIFLIB_MAJOR. This must be defined
 # because -Werror=undef is enabled.
@@ -264,6 +277,7 @@ Amazon Corretto's packaging of the OpenJDK ${java_spec_version} debug symbols.
 %endif
 
 bash ./configure \\
+       --with-boot-jdk=\${PWD}/corretto-bootstrap-jdk \\
 %ifarch aarch64
         --with-extra-cflags="-moutline-atomics%{?GIFLIB_DEFINE: %{GIFLIB_DEFINE}}" \\
         --with-extra-cxxflags="-moutline-atomics" \\
