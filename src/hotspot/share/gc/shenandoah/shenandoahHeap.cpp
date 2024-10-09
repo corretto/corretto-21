@@ -720,7 +720,7 @@ void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
     // notify pacer of both actual size and waste
     notify_mutator_alloc_words(req.actual_size(), req.waste());
 
-    if (wasted_bytes > 0 && req.actual_size() > ShenandoahHeapRegion::humongous_threshold_words()) {
+    if (wasted_bytes > 0 && ShenandoahHeapRegion::requires_humongous(req.actual_size())) {
       increase_humongous_waste(generation,wasted_bytes);
     }
   }
