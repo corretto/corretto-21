@@ -2,6 +2,53 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.5.11.1
+Release Date: October 15, 2024
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
++ Windows 10 or later, x86_64
++ macos 12.0 and later, x86_64
++ macos 12.0 and later, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto)
+in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.5.11.1:
+
+| Issue Name           | Platform | Description                                                                             | Link                                                                         |
+|----------------------|----------|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| Import jdk-21.0.5+11 | All      | Updates Corretto baseline to OpenJDK 21.0.5+11                                          | https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.5+11 |
+| JDK-8329995          | Linux    | Restricted access to `/proc` can cause JFR initialization to crash                      | https://bugs.openjdk.org/browse/JDK-8329995 |
+| JDK-8325616          | All      | JFR ZGC Allocation Stall events should record stack traces                              | https://bugs.openjdk.org/browse/JDK-8325616 |
+| JDK-8301686          | All      | TLS 1.3 handshake fails if server_name doesn't match resuming session                   | https://bugs.openjdk.org/browse/JDK-8301686 |
+| JDK-8330133          | Linux, macos | libj2pkcs11.so crashes on some pkcs#11 v3.0 libraries                               | https://bugs.openjdk.org/browse/JDK-8330133 |
+| JDK-8332248          | All      | (fc) java/nio/channels/FileChannel/BlockDeviceSize.java failed with RuntimeException    | https://bugs.openjdk.org/browse/JDK-8332248 |
+| JDK-8328896          | Linux, Windows | Fontmetrics for large Fonts has zero width                                        | https://bugs.openjdk.org/browse/JDK-8328896 |
+| JDK-6967482          | Windows  | TAB-key does not work in JTables after selecting details-view in JFileChooser           | https://bugs.openjdk.org/browse/JDK-6967482 |
+| JDK-8166352          | Windows  | FilePane.createDetailsView() removes JTable TAB, SHIFT-TAB functionality                | https://bugs.openjdk.org/browse/JDK-8166352 |
+| JDK-8333542          | All      | Breakpoint in parallel code does not work                                               | https://bugs.openjdk.org/browse/JDK-8333542 |
+| JDK-8321509          | aarch64  | False positive in get_trampoline fast path causes crash                                 | https://bugs.openjdk.org/browse/JDK-8321509 |
+| JDK-8337664          | All      | Distrust TLS server certificates issued after Oct 2024 and anchored by Entrust Root CAs | https://bugs.openjdk.org/browse/JDK-8337664 |
+| JDK-8338696          | Linux    | (fs) BasicFileAttributes.creationTime() falls back to epoch if birth time is unavailable | https://bugs.openjdk.org/browse/JDK-8338696 |
+
+
+The following CVEs are addressed in 21.0.5.11.1:
+
+|      CVE       | CVSS |    Component                    |
+|----------------|------|---------------------------------|
+| CVE-2024-21235 |  4.8 | hotspot/compiler                |
+| CVE-2024-21208 |  3.7 | core-libs/java.net              |
+| CVE-2024-21210 |  3.7 | hotspot/compiler                |
+| CVE-2024-21217 |  3.7 | core-libs/java.io:serialization |
+
+
 ## Corretto version: 21.0.4.7.1
 Release Date: July 16, 2024
 
