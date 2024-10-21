@@ -8,6 +8,7 @@ env:
   UPSTREAM_SHENANDOAH: https://github.com/openjdk/shenandoah-jdk21u
   LOCAL_BRANCH: develop
   LOCAL_SHENANDOAH: generational-shenandoah
+
 jobs:
     refresh-jdk:
         runs-on: ubuntu-latest
@@ -19,27 +20,35 @@ jobs:
               with:
                 fetch-depth: 0
                 ref: ${{ env.LOCAL_BRANCH }}
+
             - name: "Configure the user"
               run: |
                 git config user.email "no-reply@amazon.com"
                 git config user.name "corretto-github-robot"
+
             - name: "Merge openjdk/jdk:master to the corretto-21:develop"
               run: |
                 git fetch $UPSTREAM_REMOTE master || exit 1
                 git merge -m "Merge upstream-jdk" FETCH_HEAD
+
             - name: "Update Corretto version"
               shell: bash
               run: bash ./.github/scripts/update-version.sh $UPSTREAM_REMOTE
+
             - name: "Push to the corretto-21"
               run: git push origin $LOCAL_BRANCH
+
             - name: "Merge Corretto-21 develop to nightly"
               shell: bash
               run: |
                 git checkout nightly
                 git restore --source origin/$LOCAL_BRANCH --staged --worktree -- version.txt
-                git commit -m "Automerged version.txt from $LOCAL_BRANCH to nightly" || true
+                git commit --allow-empty -m "Ephemeral commit: Automerged version.txt from $LOCAL_BRANCH to nightly"
+                ephemeral_commit=$(git rev-parse HEAD)
                 git merge origin/$LOCAL_BRANCH
+                git rebase --onto ${ephemeral_commit}^ ${ephemeral_commit}
                 git push origin nightly
+
             - name: "Merge Corretto-21 develop to lilliput"
               shell: bash
               run: |
@@ -48,6 +57,7 @@ jobs:
                 git commit -m "Automerged version.txt from $LOCAL_BRANCH to lilliput" || true
                 git merge origin/$LOCAL_BRANCH
                 git push origin lilliput
+
             - name: "Merge openjdk/shenandoah-jdk21u:master to generational-shenandoah"
               shell: bash
               run: |
@@ -55,6 +65,7 @@ jobs:
                 git fetch $UPSTREAM_SHENANDOAH master || exit 1
                 git merge -m "Merge upstream shenandoah" FETCH_HEAD
                 git push origin $LOCAL_SHENANDOAH
+
             - name: "Merge Corretto-21 develop to generational-shenandoah"
               shell: bash
               run: |
