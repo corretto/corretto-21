@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,42 +19,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHAFFILIATION_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHAFFILIATION_HPP
-
-enum ShenandoahAffiliation {
-  FREE,
-  YOUNG_GENERATION,
-  OLD_GENERATION,
-};
-
-inline const char* shenandoah_affiliation_code(ShenandoahAffiliation type) {
-  switch(type) {
-    case FREE:
-      return "F";
-    case YOUNG_GENERATION:
-      return "Y";
-    case OLD_GENERATION:
-      return "O";
-    default:
-      ShouldNotReachHere();
-  }
+module net.foo {
 }
-
-inline const char* shenandoah_affiliation_name(ShenandoahAffiliation type) {
-  switch (type) {
-    case FREE:
-      return "FREE";
-    case YOUNG_GENERATION:
-      return "YOUNG";
-    case OLD_GENERATION:
-      return "OLD";
-    default:
-      ShouldNotReachHere();
-  }
-}
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHAFFILIATION_HPP
