@@ -270,8 +270,7 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
 inline void ShenandoahHeap::clear_cancelled_gc(bool clear_oom_handler) {
   _cancelled_gc.set(CANCELLABLE);
   if (_cancel_requested_time > 0) {
-    double cancel_time = os::elapsedTime() - _cancel_requested_time;
-    log_info(gc)("GC cancellation took %.3fs", cancel_time);
+    log_debug(gc)("GC cancellation took %.3fs", (os::elapsedTime() - _cancel_requested_time));
     _cancel_requested_time = 0;
   }
 
@@ -375,14 +374,14 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
 
   switch (_affiliations[index]) {
   case ShenandoahAffiliation::FREE:
-    // Free regions are in Old, Young, Global
+    // Free regions are in old, young, and global collections
     return true;
   case ShenandoahAffiliation::YOUNG_GENERATION:
-    // Young regions are in young_generation and global_generation, not in old_generation
-    return gen != (ShenandoahGeneration*)old_generation();
+    // Young regions are in young and global collections, not in old collections
+    return !gen->is_old();
   case ShenandoahAffiliation::OLD_GENERATION:
-    // Old regions are in old_generation and global_generation, not in young_generation
-    return gen != (ShenandoahGeneration*)young_generation();
+    // Old regions are in old and global collections, not in young collections
+    return !gen->is_young();
   default:
     assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, _affiliations[index], index);
     return false;
@@ -397,7 +396,7 @@ inline bool ShenandoahHeap::is_in_old(const void* p) const {
   return is_in(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahAffiliation::OLD_GENERATION);
 }
 
-inline bool ShenandoahHeap::is_old(oop obj) const {
+inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {
   return active_generation()->is_young() && is_in_old(obj);
 }
 

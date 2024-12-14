@@ -34,7 +34,7 @@
 
 
 const char* ShenandoahGlobalGeneration::name() const {
-  return "GLOBAL";
+  return type() == NON_GEN ? "" : "Global";
 }
 
 size_t ShenandoahGlobalGeneration::max_capacity() const {
@@ -79,6 +79,10 @@ void ShenandoahGlobalGeneration::set_concurrent_mark_in_progress(bool in_progres
   }
 
   heap->set_concurrent_young_mark_in_progress(in_progress);
+}
+
+bool ShenandoahGlobalGeneration::contains(ShenandoahAffiliation affiliation) const {
+  return true;
 }
 
 bool ShenandoahGlobalGeneration::contains(ShenandoahHeapRegion* region) const {

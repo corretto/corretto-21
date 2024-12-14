@@ -30,7 +30,6 @@
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
@@ -121,17 +120,6 @@ public:
 typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
-
-class ShenandoahSynchronizePinnedRegionStates : public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahHeapLock* const _lock;
-
-public:
-  ShenandoahSynchronizePinnedRegionStates();
-
-  void heap_region_do(ShenandoahHeapRegion* r) override;
-  bool is_thread_safe() override { return true; }
-};
 
 // Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
 // to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
@@ -601,10 +589,15 @@ public:
 
   inline bool is_in(const void* p) const override;
 
+  // Returns true if the given oop belongs to a generation that is actively being collected.
   inline bool is_in_active_generation(oop obj) const;
   inline bool is_in_young(const void* p) const;
   inline bool is_in_old(const void* p) const;
-  inline bool is_old(oop pobj) const;
+
+  // Returns true iff the young generation is being collected and the given pointer
+  // is in the old generation. This is used to prevent the young collection from treating
+  // such an object as unreachable.
+  inline bool is_in_old_during_young_collection(oop obj) const;
 
   inline ShenandoahAffiliation region_affiliation(const ShenandoahHeapRegion* r);
   inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahAffiliation new_affiliation);
@@ -746,8 +739,8 @@ private:
   ShenandoahEvacOOMHandler _oom_evac_handler;
 
   oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
-public:
 
+public:
   static address in_cset_fast_test_addr();
 
   ShenandoahCollectionSet* collection_set() const { return _collection_set; }
