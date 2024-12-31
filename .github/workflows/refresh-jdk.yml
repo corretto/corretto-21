@@ -58,6 +58,15 @@ jobs:
                 git merge origin/$LOCAL_BRANCH
                 git push origin lilliput
 
+            - name: "Merge Corretto-21 develop to lilliput-2"
+              shell: bash
+              run: |
+                git checkout lilliput-2
+                git restore --source origin/$LOCAL_BRANCH --staged --worktree -- version.txt
+                git commit -m "Automerged version.txt from $LOCAL_BRANCH to lilliput-2" || true
+                git merge origin/$LOCAL_BRANCH
+                git push origin lilliput-2
+
             - name: "Merge openjdk/shenandoah-jdk21u:master to generational-shenandoah"
               shell: bash
               run: |
