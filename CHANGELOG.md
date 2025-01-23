@@ -2,6 +2,40 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.6.7.1
+Release Date: January 21, 2025
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
++ Windows 10 or later, x86_64
++ macos 13.0 and later, x86_64
++ macos 13.0 and later, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto)
+in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.6.7.1:
+
+| Issue Name          | Platform | Description                                   | Link                                                         |
+|---------------------|----------|-----------------------------------------------|--------------------------------------------------------------|
+| Import jdk-21.0.6+7 | All      | Updates Corretto baseline to OpenJDK 21.0.6+7 | https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.6+7  |
+| JDK-8345296         | aarch64    | AArch64: VM crashes with SIGILL when prctl is disallowed | https://bugs.openjdk.org/browse/JDK-8345296                  |
+| JDK-8341194                | aarch64      | Implement C2 VectorizedHashCode on AArch64 | https://bugs.openjdk.org/browse/JDK-8341194                  |
+
+
+The following CVEs are addressed in 21.0.6.7.1:
+
+| CVE | CVSS | Component |
+| --- | --- | --- |
+| CVE-2025-21502 | 4.8 | hotspot/compiler |
+
+
 ## Corretto version: 21.0.5.11.1
 Release Date: October 15, 2024
 
