@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
-#define SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
+import javax.swing.JScrollPane;
 
-#include "gc/shared/bufferNode.hpp"
-#include "gc/shared/satbMarkQueue.hpp"
+/*
+ * @test
+ * @bug 4247092
+ * @summary JScrollPane.setCorner(corner,null) causes NPE, but defolt getCorner() rtns null
+ * @run main bug4247092
+ */
 
-class Monitor;
-class Thread;
-
-class G1SATBMarkQueueSet : public SATBMarkQueueSet {
-public:
-  G1SATBMarkQueueSet(BufferNode::Allocator* allocator);
-
-  static void handle_zero_index_for_thread(Thread* t);
-  virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const;
-  virtual void filter(SATBMarkQueue& queue);
-};
-
-#endif // SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
+public class bug4247092 {
+    public static void main(String[] args) {
+        JScrollPane sp = new JScrollPane();
+        sp.setCorner(JScrollPane.LOWER_RIGHT_CORNER, null);
+        if (sp.getCorner(JScrollPane.LOWER_RIGHT_CORNER) != null) {
+            throw new RuntimeException("The corner component should be null");
+        }
+        System.out.println("Test Passed!");
+    }
+}
