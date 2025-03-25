@@ -44,13 +44,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahCloneBarrier",
                 "ShenandoahStackWatermarkBarrier",
         };
-        String[] iu = {
-                "ShenandoahLoadRefBarrier",
-                "ShenandoahIUBarrier",
-                "ShenandoahCASBarrier",
-                "ShenandoahCloneBarrier",
-                "ShenandoahStackWatermarkBarrier",
-        };
 
         String[] generational = {
                 "ShenandoahCardBarrier"
@@ -60,9 +53,7 @@ public class TestWrongBarrierDisable {
         shouldFailAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
-        shouldFailAll("-XX:ShenandoahGCMode=iu",               iu);
         shouldPassAll("-XX:ShenandoahGCMode=passive",          concurrent);
-        shouldPassAll("-XX:ShenandoahGCMode=passive",          iu);
         shouldPassAll("-XX:ShenandoahGCMode=passive",          generational);
         shouldPassAll("-XX:ShenandoahGCMode=satb",             generational);
         shouldFailAll("-XX:ShenandoahGCMode=generational",     generational);

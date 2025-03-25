@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,24 +76,6 @@
  *
  * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:StringDeduplicationAgeThreshold=3
- *      TestStringDedup
- */
-
-/*
- * @test id=iu
- * @summary Test Shenandoah string deduplication implementation
- * @key randomness
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- * @modules java.base/java.lang:open
- *          java.management
- *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:StringDeduplicationAgeThreshold=3
- *      TestStringDedup
- *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive -XX:StringDeduplicationAgeThreshold=3
  *      TestStringDedup
  */
 
