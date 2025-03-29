@@ -169,7 +169,10 @@ public:
     _verify_gcstate_stable_weakroots,
 
     // Nothing is in progress, some objects are forwarded
-    _verify_gcstate_forwarded
+    _verify_gcstate_forwarded,
+
+    // Evacuation is done, some objects are forwarded, updating is in progress
+    _verify_gcstate_updating
   } VerifyGCState;
 
   struct VerifyOptions {

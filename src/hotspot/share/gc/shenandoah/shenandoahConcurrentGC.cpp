@@ -30,6 +30,7 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -40,7 +41,6 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -141,25 +141,11 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Complete marking under STW, and start evacuation
   vmop_entry_final_mark();
 
-  // If the GC was cancelled just before final mark (but after the preceding cancellation check),
-  // then the safepoint operation will do nothing and the concurrent mark will still be in progress.
-  // In this case it is safe (and necessary) to resume the degenerated cycle from the marking phase.
-  //
-  // On the other hand, if the GC is cancelled after final mark (but before this check), then the
-  // final mark safepoint operation will have finished the mark (setting concurrent mark in progress
-  // to false). In this case (final mark has completed), we need control to fall past the next
-  // cancellation check and resume the degenerated cycle from the evacuation phase.
+  // If the GC was cancelled before final mark, nothing happens on the safepoint. We are still
+  // in the marking phase and must resume the degenerated cycle from there. If the GC was cancelled
+  // after final mark, then we've entered the evacuation phase and must resume the degenerated cycle
+  // from that phase.
   if (_generation->is_concurrent_mark_in_progress()) {
-    // If the concurrent mark is still in progress after the final mark safepoint, then the GC has
-    // been cancelled. The degenerated cycle must resume from the marking phase. Without this check,
-    // the non-generational mode may fall all the way to the end of this collect routine without
-    // having done anything (besides mark most of the heap). Without having collected anything, we
-    // can expect an 'out of cycle' degenerated GC which will again mark the entire heap. This is
-    // not optimal.
-    // For the generational mode, we cannot allow this. The generational mode relies on marking
-    // (including the final mark) to rebuild portions of the card table. If the generational mode does
-    // not complete marking after it has swapped the card tables, the root set on subsequent GCs will
-    // be incomplete, heap corruption may follow.
     bool cancelled = check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark);
     assert(cancelled, "GC must have been cancelled between concurrent and final mark");
     return false;
@@ -206,8 +192,14 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       return false;
     }
 
+    // Evacuation is complete, retire gc labs
+    heap->concurrent_prepare_for_update_refs();
+
     // Perform update-refs phase.
-    vmop_entry_init_updaterefs();
+    if (ShenandoahVerify || ShenandoahPacing) {
+      vmop_entry_init_updaterefs();
+    }
+
     entry_updaterefs();
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_updaterefs)) {
       return false;
@@ -762,10 +754,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
           heap->verifier()->verify_after_concmark();
         }
       }
-
-      if (VerifyAfterGC) {
-        Universe::verify();
-      }
     }
   }
 }
@@ -865,10 +853,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
     if (!_mark_context->is_marked(obj)) {
       shenandoah_assert_generations_reconciled();
       if (_heap->is_in_active_generation(obj)) {
-        // Here we are asserting that an unmarked from-space object is 'correct'. There seems to be a legitimate
-        // use-case for accessing from-space objects during concurrent class unloading. In all modes of Shenandoah,
-        // concurrent class unloading only happens during a global collection.
-        shenandoah_assert_correct(p, obj);
+        // Note: The obj is dead here. Do not touch it, just clear.
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
@@ -937,8 +922,8 @@ public:
     }
 
     // If we are going to perform concurrent class unloading later on, we need to
-    // cleanup the weak oops in CLD and determinate nmethod's unloading state, so that we
-    // can cleanup immediate garbage sooner.
+    // clean up the weak oops in CLD and determine nmethod's unloading state, so that we
+    // can clean up immediate garbage sooner.
     if (ShenandoahHeap::heap()->unload_classes()) {
       // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either null the
       // CLD's holder or evacuate it.
@@ -963,22 +948,25 @@ public:
 void ShenandoahConcurrentGC::op_weak_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
-  // Concurrent weak root processing
   {
+    // Concurrent weak root processing
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
     ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
     ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
     heap->workers()->run_task(&task);
   }
 
-  // Perform handshake to flush out dead oops
   {
+    // It is possible for mutators executing the load reference barrier to have
+    // loaded an oop through a weak handle that has since been nulled out by
+    // weak root processing. Handshaking here forces them to complete the
+    // barrier before the GC cycle continues and does something that would
+    // change the evaluation of the barrier (for example, resetting the TAMS
+    // on trashed regions could make an oop appear to be marked _after_ the
+    // region has been recycled).
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
     heap->rendezvous_threads();
   }
-  // We can only toggle concurrent_weak_root_in_progress flag
-  // at a safepoint, so that mutators see a consistent
-  // value. The flag will be cleared at the next safepoint.
 }
 
 void ShenandoahConcurrentGC::op_class_unloading() {
@@ -1072,14 +1060,9 @@ void ShenandoahConcurrentGC::op_evacuate() {
 
 void ShenandoahConcurrentGC::op_init_updaterefs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->set_evacuation_in_progress(false);
-  heap->set_concurrent_weak_root_in_progress(false);
-  heap->prepare_update_heap_references(true /*concurrent*/);
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_updaterefs();
   }
-
-  heap->set_update_refs_in_progress(true);
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_updaterefs();
   }
@@ -1189,6 +1172,10 @@ void ShenandoahConcurrentGC::op_final_roots() {
     if (!_generation->is_old()) {
       ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
     }
+  }
+
+  if (VerifyAfterGC) {
+    Universe::verify();
   }
 }
 
