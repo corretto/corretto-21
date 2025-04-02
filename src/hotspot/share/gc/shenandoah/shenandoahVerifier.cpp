@@ -810,7 +810,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
         break;
       case _verify_gcstate_updating:
         enabled = true;
-        expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::UPDATEREFS;
+        expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::UPDATE_REFS;
         break;
       case _verify_gcstate_stable:
         enabled = true;
@@ -1106,7 +1106,7 @@ void ShenandoahVerifier::verify_before_evacuation() {
   );
 }
 
-void ShenandoahVerifier::verify_before_updaterefs() {
+void ShenandoahVerifier::verify_before_update_refs() {
   verify_at_safepoint(
           "Before Updating References",
           _verify_remembered_before_updating_references,  // verify read-write remembered set
@@ -1121,7 +1121,7 @@ void ShenandoahVerifier::verify_before_updaterefs() {
 }
 
 // We have not yet cleanup (reclaimed) the collection set
-void ShenandoahVerifier::verify_after_updaterefs() {
+void ShenandoahVerifier::verify_after_update_refs() {
   verify_at_safepoint(
           "After Updating References",
           _verify_remembered_disable,  // do not verify remembered set
