@@ -120,6 +120,8 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
       size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
       if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
+        // Do not decline_trigger() when waiting for minimum quantum of Old-gen marking.  It is not at our discretion
+        // to trigger at this time.
         return false;
       }
     }
@@ -141,6 +143,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // Detect unsigned arithmetic underflow
     assert(promo_potential < heap->capacity(), "Sanity");
     log_trigger("Expedite promotion of " PROPERFMT, PROPERFMTARGS(promo_potential));
+    accept_trigger();
     return true;
   }
 
@@ -151,9 +154,11 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // candidates, but has not completed. There is no point in trying to start the young cycle before the old
     // cycle completes.
     log_trigger("Expedite mixed evacuation of " SIZE_FORMAT " regions", mixed_candidates);
+    accept_trigger();
     return true;
   }
 
+  // Don't decline_trigger() here  That was done in ShenandoahAdaptiveHeuristics::should_start_gc()
   return false;
 }
 
