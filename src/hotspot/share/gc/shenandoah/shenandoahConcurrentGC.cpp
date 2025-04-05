@@ -689,6 +689,11 @@ void ShenandoahConcurrentGC::op_init_mark() {
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_mark();
   }
+
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahConcurrentGC::op_mark_roots() {
@@ -755,6 +760,11 @@ void ShenandoahConcurrentGC::op_final_mark() {
         }
       }
     }
+  }
+
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
   }
 }
 
@@ -1153,6 +1163,11 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
+
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahConcurrentGC::op_final_roots() {
@@ -1176,6 +1191,11 @@ void ShenandoahConcurrentGC::op_final_roots() {
 
   if (VerifyAfterGC) {
     Universe::verify();
+  }
+
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_roots_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
   }
 }
 
