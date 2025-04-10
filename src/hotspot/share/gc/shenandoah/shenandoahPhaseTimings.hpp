@@ -195,7 +195,6 @@ class outputStream;
   f(full_gc_heapdump_post,                          "  Post Heap Dump")                \
   f(full_gc_propagate_gc_state,                     "  Propagate GC State")            \
                                                                                        \
-  f(conc_uncommit,                                  "Concurrent Uncommit")             \
   f(pacing,                                         "Pacing")                          \
                                                                                        \
   f(heap_iteration_roots,                           "Heap Iteration")                  \
