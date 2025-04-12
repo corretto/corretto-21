@@ -368,7 +368,7 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
   // No flickering!
   assert(gen == active_generation(), "Race?");
 
-  switch (_affiliations[index]) {
+  switch (region_affiliation(index)) {
   case ShenandoahAffiliation::FREE:
     // Free regions are in old, young, and global collections
     return true;
@@ -379,7 +379,7 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
     // Old regions are in old and global collections, not in young collections
     return !gen->is_young();
   default:
-    assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, _affiliations[index], index);
+    assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, region_affiliation(index), index);
     return false;
   }
 }
@@ -396,8 +396,8 @@ inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {
   return active_generation()->is_young() && is_in_old(obj);
 }
 
-inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(const ShenandoahHeapRegion *r) {
-  return (ShenandoahAffiliation) _affiliations[r->index()];
+inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(const ShenandoahHeapRegion *r) const {
+  return region_affiliation(r->index());
 }
 
 inline void ShenandoahHeap::assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
@@ -416,7 +416,7 @@ inline void ShenandoahHeap::assert_lock_for_affiliation(ShenandoahAffiliation or
   //
   // Note: during full GC, all transitions between states are possible.  During Full GC, we should be in a safepoint.
 
-  if ((orig_affiliation == ShenandoahAffiliation::FREE) || (new_affiliation == ShenandoahAffiliation::FREE)) {
+  if (orig_affiliation == ShenandoahAffiliation::FREE) {
     shenandoah_assert_heaplocked_or_safepoint();
   }
 }
@@ -425,11 +425,11 @@ inline void ShenandoahHeap::set_affiliation(ShenandoahHeapRegion* r, ShenandoahA
 #ifdef ASSERT
   assert_lock_for_affiliation(region_affiliation(r), new_affiliation);
 #endif
-  _affiliations[r->index()] = (uint8_t) new_affiliation;
+  Atomic::store(_affiliations + r->index(), (uint8_t) new_affiliation);
 }
 
-inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) {
-  return (ShenandoahAffiliation) _affiliations[index];
+inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) const {
+  return (ShenandoahAffiliation) Atomic::load(_affiliations + index);
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
