@@ -61,8 +61,10 @@ public:
   inline bool mark_weak(oop obj);
 
   // Simple versions of marking accessors, to be used outside of marking (e.g. no possible concurrent updates)
-  inline bool is_marked(oop) const;
+  inline bool is_marked(oop obj) const;
+  inline bool is_marked(HeapWord* raw_obj) const;
   inline bool is_marked_strong(oop obj) const;
+  inline bool is_marked_strong(HeapWord* raw_obj) const;
   inline bool is_marked_weak(oop obj) const;
   inline bool is_marked_or_old(oop obj) const;
   inline bool is_marked_strong_or_old(oop obj) const;
