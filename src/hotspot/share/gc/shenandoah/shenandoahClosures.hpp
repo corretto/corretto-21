@@ -35,6 +35,15 @@ class ShenandoahHeap;
 class ShenandoahMarkingContext;
 class ShenandoahHeapRegionSet;
 class Thread;
+class SATBMarkQueueSet;
+
+class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
+private:
+  SATBMarkQueueSet& _qset;
+public:
+  inline explicit ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset);
+  inline void do_thread(Thread* thread) override;
+};
 
 class ShenandoahForwardedIsAliveClosure: public BoolObjectClosure {
 private:

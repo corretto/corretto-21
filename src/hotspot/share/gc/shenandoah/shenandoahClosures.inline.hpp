@@ -39,6 +39,14 @@
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 
+ShenandoahFlushSATBHandshakeClosure::ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
+  HandshakeClosure("Shenandoah Flush SATB"),
+  _qset(qset) {}
+
+void ShenandoahFlushSATBHandshakeClosure::do_thread(Thread* thread) {
+  _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+}
+
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
   _mark_context(ShenandoahHeap::heap()->marking_context()) {
 }
