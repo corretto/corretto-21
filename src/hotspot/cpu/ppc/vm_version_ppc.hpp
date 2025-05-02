@@ -96,6 +96,8 @@ public:
   constexpr static bool supports_stack_watermark_barrier() { return true; }
   constexpr static bool supports_recursive_lightweight_locking() { return true; }
 
+  static bool supports_float16() { return PowerArchitecturePPC64 >= 9; }
+
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support
   static bool has_fsqrt()   { return (_features & fsqrt_m) != 0; }

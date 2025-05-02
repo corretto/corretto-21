@@ -231,6 +231,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   } else {
     _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
   }
+  _use_secondary_supers_table = UseSecondarySupersTable;
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
   _use_full_module_graph = MetaspaceShared::use_full_module_graph();
@@ -297,6 +298,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
   st->print_cr("- narrow_klass_pointer_bits:      %d", _narrow_klass_pointer_bits);
   st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
+  st->print_cr("- use_secondary_supers_table:     %d", _use_secondary_supers_table);
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_X, _serialized_data_offset);
   st->print_cr("- heap_begin:                     " INTPTR_FORMAT, p2i(_heap_begin));
@@ -2457,6 +2459,11 @@ bool FileMapHeader::validate() {
                   " does not equal the current UseCompactObjectHeaders setting (%s).",
                   _compact_headers          ? "enabled" : "disabled",
                   UseCompactObjectHeaders   ? "enabled" : "disabled");
+    return false;
+  }
+
+  if (! _use_secondary_supers_table && UseSecondarySupersTable) {
+    log_warning(cds)("The shared archive was created without UseSecondarySupersTable.");
     return false;
   }
 

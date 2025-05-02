@@ -125,7 +125,7 @@ OopHandle Universe::_msg_class_metaspace;
 
 OopHandle Universe::_null_ptr_exception_instance;
 OopHandle Universe::_arithmetic_exception_instance;
-OopHandle Universe::_internal_error_instance;
+OopHandle Universe::_virtual_machine_error_instance;
 
 OopHandle Universe::_reference_pending_list;
 
@@ -143,6 +143,9 @@ Array<u2>* Universe::_the_empty_short_array           = nullptr;
 Array<Klass*>* Universe::_the_empty_klass_array     = nullptr;
 Array<InstanceKlass*>* Universe::_the_empty_instance_klass_array  = nullptr;
 Array<Method*>* Universe::_the_empty_method_array   = nullptr;
+
+uintx Universe::_the_array_interfaces_bitmap = 0;
+uintx Universe::_the_empty_klass_bitmap      = 0;
 
 // These variables are guarded by FullGCALot_lock.
 debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
@@ -180,7 +183,7 @@ oop Universe::the_min_jint_string()               { return _the_min_jint_string.
 
 oop Universe::null_ptr_exception_instance()       { return _null_ptr_exception_instance.resolve(); }
 oop Universe::arithmetic_exception_instance()     { return _arithmetic_exception_instance.resolve(); }
-oop Universe::internal_error_instance()           { return _internal_error_instance.resolve(); }
+oop Universe::virtual_machine_error_instance()    { return _virtual_machine_error_instance.resolve(); }
 
 oop Universe::the_null_sentinel()                 { return _the_null_sentinel.resolve(); }
 
@@ -379,6 +382,11 @@ void Universe::genesis(TRAPS) {
       // Set up shared interfaces array.  (Do this before supers are set up.)
       _the_array_interfaces_array->at_put(0, vmClasses::Cloneable_klass());
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
+    }
+
+    if (UseSecondarySupersTable) {
+      Universe::_the_array_interfaces_bitmap = Klass::compute_secondary_supers_bitmap(_the_array_interfaces_array);
+      Universe::_the_empty_klass_bitmap      = Klass::compute_secondary_supers_bitmap(_the_empty_klass_array);
     }
 
     initialize_basic_type_klass(_fillerArrayKlassObj, CHECK);
@@ -1028,7 +1036,7 @@ bool universe_post_init() {
      return false; // initialization failed
   }
   instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
-  Universe::_internal_error_instance = OopHandle(Universe::vm_global(), instance);
+  Universe::_virtual_machine_error_instance = OopHandle(Universe::vm_global(), instance);
 
   Handle msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
   java_lang_Throwable::set_message(Universe::arithmetic_exception_instance(), msg());

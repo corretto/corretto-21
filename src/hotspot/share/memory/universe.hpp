@@ -128,6 +128,9 @@ class Universe: AllStatic {
 
   static Array<Klass*>*  _the_array_interfaces_array;
 
+  static uintx _the_array_interfaces_bitmap;
+  static uintx _the_empty_klass_bitmap;
+
   // array of preallocated error objects with backtrace
   static OopHandle     _preallocated_out_of_memory_error_array;
 
@@ -140,7 +143,7 @@ class Universe: AllStatic {
 
   static OopHandle    _null_ptr_exception_instance;   // preallocated exception object
   static OopHandle    _arithmetic_exception_instance; // preallocated exception object
-  static OopHandle    _internal_error_instance;       // preallocated exception object
+  static OopHandle    _virtual_machine_error_instance; // preallocated exception object
 
   // References waiting to be transferred to the ReferenceHandler
   static OopHandle    _reference_pending_list;
@@ -261,10 +264,11 @@ class Universe: AllStatic {
 
   static oop          null_ptr_exception_instance();
   static oop          arithmetic_exception_instance();
-  static oop          internal_error_instance();
-  static oop          vm_exception()                  { return internal_error_instance(); }
+  static oop          virtual_machine_error_instance();
+  static oop          vm_exception()                  { return virtual_machine_error_instance(); }
+  static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
+  static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
 
-  static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array;   }
   static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_method(); }
   static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
@@ -297,6 +301,8 @@ class Universe: AllStatic {
   static Array<Method*>*         the_empty_method_array() { return _the_empty_method_array; }
   static Array<Klass*>*          the_empty_klass_array()  { return _the_empty_klass_array; }
   static Array<InstanceKlass*>*  the_empty_instance_klass_array() { return _the_empty_instance_klass_array; }
+
+  static uintx                   the_empty_klass_bitmap() { return _the_empty_klass_bitmap; }
 
   // OutOfMemoryError support. Returns an error with the required message. The returned error
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already
