@@ -416,6 +416,10 @@ void ShenandoahConcurrentGC::entry_reset() {
                                 msg);
     op_reset();
   }
+
+  if (heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_read_table_as_clean();
+  }
 }
 
 void ShenandoahConcurrentGC::entry_scan_remembered_set() {
@@ -680,13 +684,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!_generation->is_mark_complete(), "should not be complete");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
-
   if (heap->mode()->is_generational()) {
-    if (_generation->is_young()) {
-      // The current implementation of swap_remembered_set() copies the write-card-table to the read-card-table.
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
-      _generation->swap_remembered_set();
-    }
 
     if (_generation->is_global()) {
       heap->old_generation()->cancel_gc();
@@ -696,6 +694,14 @@ void ShenandoahConcurrentGC::op_init_mark() {
       // abandoned.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
       heap->old_generation()->transfer_pointers_from_satb();
+    }
+    {
+      // After we swap card table below, the write-table is all clean, and the read table holds
+      // cards dirty prior to the start of GC. Young and bootstrap collection will update
+      // the write card table as a side effect of remembered set scanning. Global collection will
+      // update the card table as a side effect of global marking of old objects.
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
+      _generation->swap_card_tables();
     }
   }
 
@@ -1029,7 +1035,7 @@ void ShenandoahConcurrentGC::op_weak_roots() {
     // on trashed regions could make an oop appear to be marked _after_ the
     // region has been recycled).
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
-    heap->rendezvous_threads();
+    heap->rendezvous_threads("Shenandoah Concurrent Weak Roots");
   }
 }
 

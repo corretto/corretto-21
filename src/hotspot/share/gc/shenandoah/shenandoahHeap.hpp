@@ -494,7 +494,7 @@ private:
   void update_heap_region_states(bool concurrent);
   virtual void final_update_refs_update_region_states();
 
-  void rendezvous_threads();
+  void rendezvous_threads(const char* name);
   void recycle_trash();
 public:
   void rebuild_free_set(bool concurrent);
@@ -744,7 +744,7 @@ private:
   ShenandoahLiveData** _liveness_cache;
 
 public:
-  inline ShenandoahMarkingContext* complete_marking_context() const;
+  // Return the marking context regardless of the completeness status.
   inline ShenandoahMarkingContext* marking_context() const;
 
   template<class T>
