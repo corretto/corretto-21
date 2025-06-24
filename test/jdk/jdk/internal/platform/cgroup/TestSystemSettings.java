@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,25 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8035968
- * @summary Verify UseMD5Intrinsics option processing on unsupported CPU.
- * @library /test/lib /
+ * @key cgroups
+ * @requires (os.family == "linux" & !vm.musl)
  * @requires vm.flagless
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.intrinsics.sha.cli.TestUseMD5IntrinsicsOptionOnUnsupportedCPU
+ * @library /test/lib
+ * @build TestSystemSettings
+ * @run main/othervm TestSystemSettings
  */
 
-package compiler.intrinsics.sha.cli;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedCPU;
+public class TestSystemSettings {
 
-public class TestUseMD5IntrinsicsOptionOnUnsupportedCPU {
-    public static void main(String args[]) throws Throwable {
-        new DigestOptionsBase(
-                new GenericTestCaseForUnsupportedCPU(
-                        DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false)).test();
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XshowSettings:system", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        output.shouldContain("System not containerized.");
     }
 }
