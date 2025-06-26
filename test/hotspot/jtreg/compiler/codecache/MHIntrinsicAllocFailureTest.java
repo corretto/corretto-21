@@ -39,6 +39,11 @@
  *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
  *                   -XX:ReservedCodeCacheSize=16m -XX:+SegmentedCodeCache
  *                   compiler.codecache.MHIntrinsicAllocFailureTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *                   -XX:ReservedCodeCacheSize=20m -XX:+SegmentedCodeCache
+ *                   -XX:+TieredCompilation -XX:HotCodeHeapSize=4M
+ *                   compiler.codecache.MHIntrinsicAllocFailureTest
  */
 
 package compiler.codecache;
@@ -73,7 +78,7 @@ public class MHIntrinsicAllocFailureTest {
         // JIT compilers should be off, now.
         Asserts.assertNotEquals(WHITE_BOX.getCompilationActivityMode(), 1);
         System.out.println("Code cache segments for non-profiled and profiled nmethods are full.");
-        // Generate and use a MH itrinsic. Should not trigger one of the following:
+        // Generate and use a MH intrinsic. Should not trigger one of the following:
         // - VirtualMachineError: Out of space in CodeCache for method handle intrinsic
         // - InternalError: java.lang.NoSuchMethodException: no such method:
         //   java.lang.invoke.MethodHandle.linkToStatic(int,int,Object,MemberName)int/invokeStatic

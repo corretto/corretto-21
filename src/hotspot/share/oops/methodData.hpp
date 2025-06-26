@@ -1973,6 +1973,12 @@ public:
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
 
+  enum class UseState : int8_t {
+    Unknown = 0,
+    Cold    = -1,
+    Hot     = 1
+  };
+
   // Compiler-related counters.
   class CompilerCounters {
     friend class VMStructs;
@@ -2090,6 +2096,10 @@ private:
   // parameter profiling.
   enum { no_parameters = -2, parameters_uninitialized = -1 };
   int _parameters_type_data_di;
+
+  // FIXME: This is a temporary solution to support placing C2 compiled methods marked with
+  //        the UseState compiler directive into the HotCodeHeap.
+  UseState _use_state;
 
   // Beginning of the data entries
   intptr_t _data[1];
@@ -2297,6 +2307,9 @@ public:
                                                    aid->set_arg_modified(a, v); }
 
   void clear_escape_info()                       { _eflags = _arg_local = _arg_stack = _arg_returned = 0; }
+
+  UseState use_state() const                     { return _use_state; }
+  void set_use_state(UseState v)                 { _use_state = v;    }
 
   // Location and size of data area
   address data_base() const {

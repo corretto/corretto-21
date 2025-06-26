@@ -76,7 +76,8 @@ NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase)) \
 NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLevel)) \
     cflags(VectorizeDebug,          uintx, 0, VectorizeDebug) \
     cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
-    cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
+    cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit) \
+    cflags(UseState,                intx, (intx)MethodData::UseState::Unknown, Unknown)
 #else
   #define compilerdirectives_c2_flags(cflags)
 #endif
@@ -103,6 +104,8 @@ public:
   static void print(outputStream* st);
   static void release(DirectiveSet* set);
   static void release(CompilerDirectives* dir);
+  static int  depth() { return _depth; }
+  static CompilerDirectives* top() { return _top; }
 };
 
 class DirectiveSet : public CHeapObj<mtCompiler> {

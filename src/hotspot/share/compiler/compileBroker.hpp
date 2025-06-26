@@ -236,7 +236,7 @@ class CompileBroker: AllStatic {
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
   static void init_compiler_threads();
   static void possibly_add_compiler_threads(JavaThread* THREAD);
-  static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
+  static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level);
 
   static CompileTask* create_compile_task(CompileQueue*       queue,
                                           int                 compile_id,
@@ -246,6 +246,7 @@ class CompileBroker: AllStatic {
                                           const methodHandle& hot_method,
                                           int                 hot_count,
                                           CompileTask::CompileReason compile_reason,
+                                          DirectiveSet*       directive,
                                           bool                blocking);
   static void wait_for_completion(CompileTask* task);
 #if INCLUDE_JVMCI
@@ -267,7 +268,6 @@ class CompileBroker: AllStatic {
                                   const methodHandle& hot_method,
                                   int hot_count,
                                   CompileTask::CompileReason compile_reason,
-                                  bool blocking,
                                   Thread* thread);
 
   static CompileQueue* compile_queue(int comp_level);
@@ -304,14 +304,7 @@ public:
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
 
-  static nmethod* compile_method(const methodHandle& method,
-                                   int osr_bci,
-                                   int comp_level,
-                                   const methodHandle& hot_method,
-                                   int hot_count,
-                                   CompileTask::CompileReason compile_reason,
-                                   DirectiveSet* directive,
-                                   TRAPS);
+  static void remove_tasks_with_old_directives();
 
   // Acquire any needed locks and assign a compile id
   static int assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);

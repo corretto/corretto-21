@@ -57,6 +57,32 @@
  *                   -XX:+SegmentedCodeCache
  *                   -DhelperVirtualThread=true
  *                   compiler.codecache.stress.UnexpectedDeoptimizationAllTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:CompileCommand=HotCodeHeap,compiler.codecache.stress.TestCaseImpl::method
+ *                   -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.UnexpectedDeoptimizationTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:CompileCommand=HotCodeHeap,compiler.codecache.stress.TestCaseImpl::method
+ *                   -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.UnexpectedDeoptimizationTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.UnexpectedDeoptimizationTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.UnexpectedDeoptimizationTest
  */
 
 package compiler.codecache.stress;

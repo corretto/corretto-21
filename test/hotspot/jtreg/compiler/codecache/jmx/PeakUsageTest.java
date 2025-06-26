@@ -37,6 +37,14 @@
  *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
  *     -XX:-SegmentedCodeCache
  *     compiler.codecache.jmx.PeakUsageTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *     -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *     compiler.codecache.jmx.PeakUsageTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *     -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *     compiler.codecache.jmx.PeakUsageTest
  * @summary testing of getPeakUsage() and resetPeakUsage for
  *     segmented code cache
  */

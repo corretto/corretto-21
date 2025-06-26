@@ -1318,6 +1318,8 @@ void MethodData::init() {
   _num_blocks = 0;
   _would_profile = unknown;
 
+  _use_state = UseState::Unknown;
+
 #if INCLUDE_JVMCI
   _jvmci_ir_size = 0;
   _failed_speculations = nullptr;

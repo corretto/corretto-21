@@ -40,7 +40,13 @@ public class CodeCacheCLITestBase {
                     CodeCacheOptions.mB(100)),
             new CodeCacheOptions(CodeCacheOptions.mB(60)),
             new CodeCacheOptions(CodeCacheOptions.mB(200)),
-            new CodeCacheOptions(CodeCacheOptions.mB(300))
+            new CodeCacheOptions(CodeCacheOptions.mB(300)),
+            new CodeCacheOptions(CodeCacheOptions.mB(250),
+                    CodeCacheOptions.mB(50), CodeCacheOptions.mB(75),
+                    CodeCacheOptions.mB(75), CodeCacheOptions.mB(50)),
+            new CodeCacheOptions(CodeCacheOptions.mB(200),
+                    CodeCacheOptions.mB(50), CodeCacheOptions.mB(100),
+                    CodeCacheOptions.mB(0),  CodeCacheOptions.mB(50))
     };
 
     private final CodeCacheCLITestCase[] testCases;

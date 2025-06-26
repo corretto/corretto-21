@@ -1557,6 +1557,13 @@ const int ObjectAlignmentInBytes = 8;
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
+  product(uintx, HotCodeHeapSize, 0,                                        \
+          "Size of code heap with predicted hot methods (in bytes)")        \
+          constraint(VMPageSizeConstraintFunc, AtParse)                     \
+                                                                            \
+  product(bool, RecompileColdNMethods, false,                               \
+          "Recompile cold nmethods removed from HotCodeHeap")               \
+                                                                            \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
           range(32*K, max_uintx)                                            \

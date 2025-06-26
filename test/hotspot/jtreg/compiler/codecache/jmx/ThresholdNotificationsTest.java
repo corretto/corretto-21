@@ -38,6 +38,14 @@
  *     -XX:+WhiteBoxAPI -XX:-MethodFlushing -XX:CompileCommand=compileonly,null::*
  *     -XX:-SegmentedCodeCache
  *     compiler.codecache.jmx.ThresholdNotificationsTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ *     -XX:+WhiteBoxAPI -XX:-MethodFlushing -XX:CompileCommand=compileonly,null::*
+ *     -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *     compiler.codecache.jmx.ThresholdNotificationsTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ *     -XX:+WhiteBoxAPI -XX:-MethodFlushing -XX:CompileCommand=compileonly,null::*
+ *     -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *     compiler.codecache.jmx.ThresholdNotificationsTest
  */
 
 package compiler.codecache.jmx;

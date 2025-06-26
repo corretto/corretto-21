@@ -1062,6 +1062,25 @@ void ciEnv::register_method(ciMethod* target,
     MutexLocker ml(Compile_lock);
     NoSafepointVerifier nsv;
 
+    if (method->queued_with_old_directive()) {
+      ResourceMark rm;
+      // Compiler directives have changed for the method since it was queued.
+      // Discard the compilation result and let the method go through the normal compilation path again.
+      record_failure("queued with old directives");
+      log_trace(codecache)("Discard compilation of %s [id:%d, level:%d] because of being compiled with old directives",
+                            method->external_name(),
+                            compile_id(),
+                            comp_level());
+      code_buffer->free_blob();
+      CompiledMethod *nm = method->code();
+      if (nm != nullptr && nm->as_nmethod()->needs_recompilation()) {
+        // We could not explicitly recompile the method because it is being compiled.
+        // We invalidate the current code to recompile it through the normal compilation path.
+        nm->make_not_entrant();
+      }
+      return;
+    }
+
     // Change in Jvmti state may invalidate compilation.
     if (!failing() && jvmti_state_changed()) {
       record_failure("Jvmti state change invalidated dependencies");
@@ -1140,17 +1159,15 @@ void ciEnv::register_method(ciMethod* target,
 #endif
 
       if (entry_bci == InvocationEntryBci) {
-        if (TieredCompilation) {
-          // If there is an old version we're done with it
-          CompiledMethod* old = method->code();
-          if (TraceMethodReplacement && old != nullptr) {
-            ResourceMark rm;
-            char *method_name = method->name_and_sig_as_C_string();
-            tty->print_cr("Replacing method %s", method_name);
-          }
-          if (old != nullptr) {
-            old->make_not_used();
-          }
+        // If there is an old version we're done with it
+        CompiledMethod* old = method->code();
+        if (TraceMethodReplacement && old != nullptr) {
+          ResourceMark rm;
+          char *method_name = method->name_and_sig_as_C_string();
+          tty->print_cr("Replacing method %s", method_name);
+        }
+        if (old != nullptr) {
+          old->make_not_used();
         }
 
         LogTarget(Info, nmethod, install) lt;

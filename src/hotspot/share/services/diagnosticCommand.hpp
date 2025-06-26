@@ -707,8 +707,9 @@ public:
 class CompilerDirectivesAddDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _filename;
+  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
 public:
-  static int num_arguments() { return 1; }
+  static int num_arguments() { return 2; }
   CompilerDirectivesAddDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.directives_add";

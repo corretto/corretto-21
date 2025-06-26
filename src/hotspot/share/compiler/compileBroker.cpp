@@ -1142,6 +1142,86 @@ void CompileBroker::mark_on_stack() {
   }
 }
 
+// The function checks whether a C2 recompilation of an nmethod in HotCodeHeap caused by
+// compiler directives update should be skipped.
+// The function returns true if the recompilation is not needed:
+// - The method is marked as cold by compiler directive UseState and RecompileColdNMethods is false.
+// - The method is marked as hot by compiler directive UseState and it is already in the HotCodeHeap.
+// Otherwise, it returns false. It returns false if the method is not compiled by C2 or
+// HotCodeHeap is not available or a compiler directive does not provide UseState.
+// The function requires MethodData to be available for the method. If not, the function returns false.
+//
+// This function updates a Java method use state based on the compiler directive
+// UseState. Using the compiler directive UseState we can dynamicly mark methods
+// as hot or cold. This allows moving methods in and out of the HotCodeHeap.
+// This cannot be done with the compile command HotCodeHeap. The compile command HotCodeHeap
+// can only mark methods hot.
+//
+// The function makes the method not entrant if the method is marked as cold and
+// in the HotCodeHeap.
+//
+// FIXME: This is a temporary solution to support placing C2 compiled methods marked with
+//        the UseState compiler directive into the HotCodeHeap.
+static bool skip_hot_code_heap_nmethod_recompilation(const methodHandle& method,
+                                                     int comp_level,
+                                                     CompileTask::CompileReason compile_reason,
+                                                     DirectiveSet *directive) {
+#ifdef COMPILER2
+  MethodData *mdo = method->method_data();
+  if (mdo == nullptr ||
+      !is_c2_compile(comp_level) ||
+      !CodeCache::heap_available(CodeBlobType::MethodHot) ||
+      directive->UseStateOption == (int)MethodData::UseState::Unknown) {
+    return false;
+  }
+
+  ResourceMark rm;
+
+  // We need to update the method use state based on the compiler directive UseState.
+  // We map compiler directive UseState positive values to MethodData::UseState::Hot.
+  // and negative values to MethodData::UseState::Cold. Absolute values are currently
+  // not used.
+  MethodData::UseState new_state = (directive->UseStateOption < 0)
+                                       ? MethodData::UseState::Cold
+                                       : MethodData::UseState::Hot;
+  mdo->set_use_state(new_state);
+  log_debug(codecache)("Marked %s as %s with compiler directive UseState",
+                       method->external_name(),
+                       (new_state == MethodData::UseState::Cold) ? "cold" : "hot");
+
+
+  // If this recompilation is not due to compiler directives update, we should not skip it.
+  if (compile_reason != CompileTask::CompileReason::Reason_DirectivesChanged) {
+    return false;
+  }
+
+  CompiledMethod* cm = method->code();
+  if (cm != nullptr &&
+      cm->is_in_use() &&
+      !cm->is_unloading() &&
+      CodeCache::get_code_blob_type(cm) == CodeBlobType::MethodHot) {
+    bool skip = true;
+    if (new_state == MethodData::UseState::Cold) {
+      if (cm->make_not_entrant()) {
+        log_trace(codecache)("Made %s [id:%d, level:%d, MethodHot] not entrant because of marked as cold",
+                             method->external_name(), cm->compile_id(), cm->comp_level());
+      }
+
+      skip = !RecompileColdNMethods;
+    }
+
+    if (skip) {
+      log_trace(codecache)(
+          "Cancel recompilation of %s [id:%d, level:%d] from HotCodeHeap marked as %s",
+          method->external_name(), cm->compile_id(), cm->comp_level(),
+          (new_state == MethodData::UseState::Cold) ? "cold" : "hot");
+    }
+    return skip;
+  }
+#endif
+  return false;
+}
+
 // ------------------------------------------------------------------
 // CompileBroker::compile_method
 //
@@ -1152,7 +1232,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                         const methodHandle& hot_method,
                                         int hot_count,
                                         CompileTask::CompileReason compile_reason,
-                                        bool blocking,
                                         Thread* thread) {
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
   assert(method->method_holder()->is_instance_klass(),
@@ -1216,6 +1295,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   // Outputs from the following MutexLocker block:
   CompileTask* task     = nullptr;
   CompileQueue* queue  = compile_queue(comp_level);
+  bool blocking = false;
 
   // Acquire our lock.
   {
@@ -1241,6 +1321,14 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     int compile_id = assign_compile_id(method, osr_bci);
     if (compile_id == 0) {
       // The compilation falls outside the allowed range.
+      return;
+    }
+
+    // This directive will be owned by a compile task.
+    DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler(comp_level));
+    blocking = !directive->BackgroundCompilationOption || ReplayCompiles;
+
+    if (skip_hot_code_heap_nmethod_recompilation(method, comp_level, compile_reason, directive)) {
       return;
     }
 
@@ -1321,7 +1409,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                compile_id, method,
                                osr_bci, comp_level,
                                hot_method, hot_count, compile_reason,
-                               blocking);
+                               directive, blocking);
   }
 
   if (blocking) {
@@ -1329,46 +1417,78 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   }
 }
 
-nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
-                                       int comp_level,
-                                       const methodHandle& hot_method, int hot_count,
-                                       CompileTask::CompileReason compile_reason,
-                                       TRAPS) {
-  // Do nothing if compilebroker is not initialized or compiles are submitted on level none
-  if (!_initialized || comp_level == CompLevel_none) {
-    return nullptr;
+static void apply_directive_exclude_option(const methodHandle& method, int comp_level) {
+  if (method->is_always_compilable()) {
+    return;
   }
+
+  // Compiler directives can be updated.
+  // We need to guarantee that the directive is not changed while we are using it.
+  MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
+
+  const bool not_compilable = method->is_not_compilable(comp_level);
+  const bool excluded = method->is_excluded_from_compilation(comp_level);
+
+  if (not_compilable && !excluded) {
+    // The method is already not compilable, no need to exclude it.
+    return;
+  }
+
+  assert(not_compilable == excluded, "Excluded status must be aligned with compilable status");
 
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
   assert(comp != nullptr, "Ensure we have a compiler");
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
-  // CompileBroker::compile_method can trap and can have pending async exception.
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
+  const bool excluded_new_value = directive->ExcludeOption;
   DirectivesStack::release(directive);
-  return nm;
+
+  if (excluded_new_value == excluded) {
+    return;
+  }
+
+  if (comp->is_c1()) {
+    method->set_is_c1_excluded(excluded_new_value);
+    method->set_is_not_c1_compilable(excluded_new_value);
+  } else if (comp->is_c2()) {
+    method->set_is_c2_excluded(excluded_new_value);
+    method->set_is_not_c2_compilable(excluded_new_value);
+  }
+  if (excluded_new_value) {
+    method->print_made_not_compilable(comp_level, /*is_osr*/ false, /*report*/ true, "excluded by CompilerDirective");
+  } else {
+    method->print_made_compilable(comp_level, "included by CompilerDirective");
+  }
 }
 
+// CompileBroker::compile_method can trap and can have pending async exception.
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          int comp_level,
                                          const methodHandle& hot_method, int hot_count,
                                          CompileTask::CompileReason compile_reason,
-                                         DirectiveSet* directive,
                                          TRAPS) {
+  // Do nothing if compilebroker is not initialized or compiles are submitted on level none
+  if (!_initialized || comp_level == CompLevel_none) {
+    return nullptr;
+  }
 
   // make sure arguments make sense
   assert(method->method_holder()->is_instance_klass(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
   assert(!method->method_holder()->is_not_initialized(), "method holder must be initialized");
+
   // return quickly if possible
 
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
-  if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
+
+  if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level)) {
     return nullptr;
   }
+
+  apply_directive_exclude_option(method, comp_level);
 
 #if INCLUDE_JVMCI
   if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
@@ -1475,8 +1595,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     if (!should_compile_new_jobs()) {
       return nullptr;
     }
-    bool is_blocking = !directive->BackgroundCompilationOption || ReplayCompiles;
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, is_blocking, THREAD);
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, THREAD);
   }
 
   // return requested nmethod
@@ -1513,8 +1632,17 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
       return true;
     } else {
       CompiledMethod* result = method->code();
-      if (result == nullptr) return false;
-      return comp_level == result->comp_level();
+      if (result == nullptr ||
+          comp_level != result->comp_level()) {
+        return false;
+      }
+
+      nmethod *nm = result->as_nmethod_or_null();
+      if (nm != nullptr && nm->needs_recompilation()) {
+        return false;
+      }
+
+      return true;
     }
   }
 }
@@ -1538,7 +1666,7 @@ bool CompileBroker::compilation_is_in_queue(const methodHandle& method) {
 // CompileBroker::compilation_is_prohibited
 //
 // See if this compilation is not allowed.
-bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded) {
+bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level) {
   bool is_native = method->is_native();
   // Some compilers may not support the compilation of natives.
   AbstractCompiler *comp = compiler(comp_level);
@@ -1556,7 +1684,7 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
 
   // The method may be explicitly excluded by the user.
   double scale;
-  if (excluded || (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, scale) && scale == 0)) {
+  if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, scale) && scale == 0) {
     bool quietly = CompilerOracle::be_quiet();
     if (PrintCompilation && !quietly) {
       // This does not happen quietly...
@@ -1631,10 +1759,12 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
                                                 const methodHandle& hot_method,
                                                 int                 hot_count,
                                                 CompileTask::CompileReason compile_reason,
+                                                DirectiveSet*       directive,
                                                 bool                blocking) {
   CompileTask* new_task = CompileTask::allocate();
   new_task->initialize(compile_id, method, osr_bci, comp_level,
                        hot_method, hot_count, compile_reason,
+                       directive,
                        blocking);
   queue->add(new_task);
   return new_task;
@@ -2379,6 +2509,21 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     break;
   }
 
+  if (failure_reason != nullptr &&
+      task->compile_reason() == CompileTask::Reason_DirectivesChanged &&
+      compilable != ciEnv::MethodCompilable_never) {
+    // A recompilation with new directives was requested and has failed.
+    // As the method is still compilable we can try to recompile it through the normal compilation path.
+    CompiledMethod *nm = method->code();
+    if (nm != nullptr && nm->make_not_entrant()) {
+      ResourceMark rm;
+      log_trace(codecache)("Made %s [id:%d, level:%d] not entrant because of directives update",
+                            method->external_name(),
+                            nm->compile_id(),
+                            nm->comp_level());
+    }
+  }
+
   // Note that the queued_for_compilation bits are cleared without
   // protection of a mutex. [They were set by the requester thread,
   // when adding the task to the compile queue -- at which time the
@@ -2866,4 +3011,36 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
     out->print_cr("\n__ Compile & CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
   }
   out->print_cr("\n__ CodeHeapStateAnalytics total duration %10.3f seconds _________\n", ts_total.seconds());
+}
+
+static void remove_tasks_with_old_directives(CompileQueue* compile_queue) {
+  assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
+  for (CompileTask* task = compile_queue->first(); task != nullptr;) {
+    CompileTask* next_task = task->next();
+    methodHandle mh(Thread::current(), task->method());
+    if (mh->queued_with_old_directive()) {
+      ResourceMark rm;
+      task->set_failure_reason("changed compiler directives");
+      compile_queue->remove_and_mark_stale(task);
+      mh->clear_queued_for_compilation();
+      log_trace(codecache)("Removed compile task  %s [id:%d, level:%d] from the queue because of directives update",
+                            mh->external_name(),
+                            task->compile_id(),
+                            task->comp_level());
+
+    }
+    task = next_task;
+  }
+}
+
+void CompileBroker::remove_tasks_with_old_directives() {
+  assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
+
+  if (_c1_compile_queue != nullptr) {
+    ::remove_tasks_with_old_directives(_c1_compile_queue);
+  }
+
+  if (_c2_compile_queue != nullptr) {
+    ::remove_tasks_with_old_directives(_c2_compile_queue);
+  }
 }

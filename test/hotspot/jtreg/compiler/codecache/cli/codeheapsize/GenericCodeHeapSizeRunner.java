@@ -69,5 +69,13 @@ public class GenericCodeHeapSizeRunner implements CodeCacheCLITestCase.Runner {
                         BlobType.MethodProfiled.sizeOptionName,
                         expectedValues.profiled),
                 testCaseDescription.getTestOptions(options));
+
+        CommandLineOptionTest.verifyOptionValueForSameVM(
+                BlobType.MethodHot.sizeOptionName,
+                Long.toString(expectedValues.hot),
+                String.format("%s should have value %d.",
+                        BlobType.MethodHot.sizeOptionName,
+                        expectedValues.hot),
+                testCaseDescription.getTestOptions(options));
     }
 }

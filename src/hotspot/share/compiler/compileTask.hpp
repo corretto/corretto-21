@@ -56,6 +56,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
       Reason_Bootstrap,        // JVMCI bootstrap
+      Reason_DirectivesChanged, // Changed CompilerDirectivesStack
       Reason_Count
   };
 
@@ -68,7 +69,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "replay",
       "whitebox",
       "must_be_compiled",
-      "bootstrap"
+      "bootstrap",
+      "directives_changed"
     };
     return reason_names[compile_reason];
   }
@@ -115,7 +117,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
                   const methodHandle& hot_method, int hot_count,
-                  CompileTask::CompileReason compile_reason, bool is_blocking);
+                  CompileTask::CompileReason compile_reason,
+                  DirectiveSet *directive, bool is_blocking);
 
   static CompileTask* allocate();
   static void         free(CompileTask* task);
@@ -128,6 +131,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_blocking() const               { return _is_blocking; }
   bool         is_success() const                { return _is_success; }
   DirectiveSet* directive() const                { return _directive; }
+  CompileReason compile_reason() const           { return _compile_reason; }
   CodeSection::csize_t nm_content_size() { return _nm_content_size; }
   void         set_nm_content_size(CodeSection::csize_t size) { _nm_content_size = size; }
   CodeSection::csize_t nm_insts_size() { return _nm_insts_size; }

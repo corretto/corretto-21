@@ -56,6 +56,28 @@
  *                   -XX:CompileCommand=exclude,jdk.internal.event.Event::*
  *                   -XX:+SegmentedCodeCache
  *                   compiler.codecache.stress.OverloadCompileQueueTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:CompileCommand=HotCodeHeap,compiler.codecache.stress.TestCaseImpl::method
+ *                   -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.OverloadCompileQueueTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:CompileCommand=HotCodeHeap,compiler.codecache.stress.TestCaseImpl::method
+ *                   -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.OverloadCompileQueueTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.OverloadCompileQueueTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.OverloadCompileQueueTest
  */
 
 package compiler.codecache.stress;

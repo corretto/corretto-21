@@ -1,0 +1,4 @@
+Implementation-Title: HotCodeAgent
+Premain-Class: com.amazon.jvm.codecache.HotCodeAgent
+Sealed: true
+

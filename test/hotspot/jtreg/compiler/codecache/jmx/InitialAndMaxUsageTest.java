@@ -40,6 +40,16 @@
  *     -XX:CompileCommand=compileonly,null::* -XX:-UseLargePages
  *     -XX:-SegmentedCodeCache
  *     compiler.codecache.jmx.InitialAndMaxUsageTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:CompileCommand=compileonly,null::* -XX:-UseLargePages
+ *     -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *     compiler.codecache.jmx.InitialAndMaxUsageTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:CompileCommand=compileonly,null::* -XX:-UseLargePages
+ *     -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *     compiler.codecache.jmx.InitialAndMaxUsageTest
  */
 
 package compiler.codecache.jmx;

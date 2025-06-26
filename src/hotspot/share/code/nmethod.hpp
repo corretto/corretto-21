@@ -264,6 +264,8 @@ class nmethod : public CompiledMethod {
 
   int _skipped_instructions_size;
 
+  bool _needs_recompilation;          // Marked for recompilation with new directives
+
   // For native wrappers
   nmethod(Method* method,
           CompilerType type,
@@ -301,7 +303,7 @@ class nmethod : public CompiledMethod {
           );
 
   // helper methods
-  void* operator new(size_t size, int nmethod_size, int comp_level) throw();
+  void* operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw();
   // For method handle intrinsics: Try MethodNonProfiled, MethodProfiled and NonNMethod.
   // Attention: Only allow NonNMethod space for special nmethods which don't need to be
   // findable by nmethod iterators! In particular, they must not contain oops!
@@ -721,6 +723,9 @@ public:
 
   virtual void  make_deoptimized();
   void finalize_relocations();
+
+  void set_needs_recompilation()   { _needs_recompilation = true; }
+  bool needs_recompilation() const { return _needs_recompilation; }
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP

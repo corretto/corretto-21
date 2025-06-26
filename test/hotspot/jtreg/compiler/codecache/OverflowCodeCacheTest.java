@@ -42,6 +42,14 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache -Xmixed
  *                   compiler.codecache.OverflowCodeCacheTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:HotCodeHeapSize=8M
+ *                   -Xmixed -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.OverflowCodeCacheTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:HotCodeHeapSize=8M
+ *                   -Xmixed -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.OverflowCodeCacheTest
  */
 
 package compiler.codecache;
@@ -85,6 +93,7 @@ public class OverflowCodeCacheTest {
         System.out.println("allocating till possible...");
         ArrayList<Long> blobs = new ArrayList<>();
         int compilationActivityMode = -1;
+        CodeCacheConstraints constraints = getCodeCacheConstraints(type);
         // Lock compilation to be able to better control code cache space
         WHITE_BOX.lockCompilation();
         try {
@@ -115,6 +124,7 @@ public class OverflowCodeCacheTest {
             } catch (VirtualMachineError e) {
                 // Expected
             }
+            constraints.check();
             // Free code cache space
             for (Long blob : blobs) {
                 WHITE_BOX.freeCodeBlob(blob);
@@ -143,4 +153,31 @@ public class OverflowCodeCacheTest {
         return bean.getUsage().getMax();
     }
 
+    class CodeCacheConstraints {
+        void check() {}
+    }
+
+    CodeCacheConstraints getCodeCacheConstraints(final BlobType type) {
+        if (WHITE_BOX.getUintxVMFlag("HotCodeHeapSize") == 0) {
+            return new CodeCacheConstraints();
+        } else if (BlobType.MethodHot == type) {
+            // NonProfiledHeap is used when HotCodeHeap runs out of space.
+            return new CodeCacheConstraints() {
+                final int nonProfiledCount = WHITE_BOX.getCodeHeapEntries(BlobType.MethodNonProfiled.id).length;
+                @Override
+                void check() {
+                    Asserts.assertLT(nonProfiledCount, WHITE_BOX.getCodeHeapEntries(BlobType.MethodNonProfiled.id).length);
+                }
+            };
+        } else {
+            // HotCodeHeap should not be used when other heap runs out of space.
+            return new CodeCacheConstraints() {
+                final int hotCount = WHITE_BOX.getCodeHeapEntries(BlobType.MethodHot.id).length;
+                @Override
+                void check() {
+                    Asserts.assertEQ(hotCount, WHITE_BOX.getCodeHeapEntries(BlobType.MethodHot.id).length);
+                }
+            };
+        }
+    }
 }
