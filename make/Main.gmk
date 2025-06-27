@@ -446,7 +446,7 @@ $(eval $(call SetupTarget, jrtfs-jar, \
 $(eval $(call SetupTarget, jdk-image, \
     MAKEFILE := Images, \
     TARGET := jdk, \
-    DEPS := jmods zip-source demos release-file, \
+    DEPS := jmods zip-source demos release-file hca-jar, \
 ))
 
 $(eval $(call SetupTarget, legacy-jre-image, \
@@ -585,6 +585,11 @@ ifneq ($(HSDIS_BACKEND), none)
       DEPS := jdk-image, \
   ))
 endif
+
+$(eval $(call SetupTarget, hca-jar, \
+    MAKEFILE := HcaJar, \
+    DEPS := java.base-libs exploded-image buildtools-jdk, \
+))
 
 ################################################################################
 # Cross compilation support

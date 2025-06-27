@@ -1,0 +1,58 @@
+#
+# Copyright Amazon.com Inc. or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include JarArchive.gmk
+include JavaCompilation.gmk
+
+################################################################################
+# This makefile compiles and installs the hot code agent
+#
+################################################################################
+
+HCA_SOURCE_DIR := $(TOPDIR)/src/utils/HotCodeAgent/src
+HCA_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hca
+
+$(eval $(call SetupJavaCompilation, BUILD_HCA, \
+    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
+    SRC := $(HCA_SOURCE_DIR), \
+    BIN := $(SUPPORT_OUTPUTDIR)/hca_classes, \
+))
+
+$(eval $(call SetupJarArchive, BUILD_HCA_JAR, \
+    DEPENDENCIES := $(BUILD_HCA), \
+    SRCS := $(SUPPORT_OUTPUTDIR)/hca_classes, \
+    JAR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/hca.jar, \
+    MANIFEST := $(HCA_SOURCE_DIR)/manifest.mf, \
+))
+
+################################################################################
+
+all: $(BUILD_HCA_JAR)
+
+.PHONY: all default
