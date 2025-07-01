@@ -1,22 +1,12 @@
 ## Hot Code Heap Agent
 
-HotCodeHeap is used to store actively used Java methods. Code stored in HotCodeHeap
+HotCodeHeap, a special code heap in CodeCache, is used to store actively used Java methods. Code stored in HotCodeHeap
 is only removed when it is not used for a long time or gets deoptimized.
 This agent is used to automate code placement into HotCodeHeap. The agent only works with JDK 21.
 
-### Building
-
-`mvn clean package`
-
-This will create `hca-1.0-SNAPSHOT.jar` in the `target` directory.
-
-### Running Tests
-
-`mvn test`
-
 ### Usage
 
-`java -javaagent:<PATH_TO_LIB>/hca-1.0-SNAPSHOT.jar`
+`java -javaagent:<JAVA_HOME>/lib/hca.jar -XX:HotCodeHeapSize=24m ...`
 
 ### Configuration
 
@@ -24,7 +14,11 @@ The agent uses JFR events to determine actively used methods.
 The agent creates temporary files with compiler directives in "java.io.tmpdir"
 that are used to place the code into HotCodeHeap.
 
-The agent can be configured as follows: `-javaagent:<PATH_TO_LIB>/hca-1.0-SNAPSHOT.jar=<opt1>=<opt1_value>,<opt2>=<opt2_value>`
+To enable HotCodeHeap you must specify its size with `HotCodeHeapSize`. By default HotCodeHeap is disabled.
+The initial value for `HotCodeHeapSize` can be chosen as 15% - 30% of the maximum usage of the non-profiled
+code heap in the steady state. You can adjust the value if monitoring CodeCache shows it's not enough.
+
+The agent can be configured as follows: `-javaagent:<JAVA_HOME>/lib/hca.jar=<opt1>=<opt1_value>,<opt2>=<opt2_value>`
 
 The agent supports the following options:
 
