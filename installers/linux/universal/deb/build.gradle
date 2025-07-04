@@ -38,6 +38,9 @@ ext {
         case 'x64':
             arch_deb = 'amd64'
             break
+        case 'armv7':
+            arch_deb = 'armhf'
+            break
     }
 }
 

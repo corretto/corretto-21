@@ -179,6 +179,9 @@ allprojects {
             if (project.hasProperty("x86") && Boolean.parseBoolean(project.getProperty('x86'))) {
                 jdkArch = "x86"
             }
+            if (project.hasProperty("armv7") && Boolean.parseBoolean(project.getProperty('armv7'))) {
+                jdkArch = "armv7"
+            }
         } else if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             os = 'windows'
             def arch = System.getenv('PROCESSOR_ARCHITECTURE')
@@ -199,6 +202,10 @@ allprojects {
                 break
             case 'x86_64':
                 correttoArch = 'x64'
+                break
+            case 'armv7':
+                correttoArch = jdkArch
+                jdkArch = 'arm'
                 break
             default:
                 throw new GradleException("${jdkArch} is not supported")
