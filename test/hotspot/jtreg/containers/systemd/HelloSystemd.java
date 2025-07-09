@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,19 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package metaspace.share;
 
-
-import jdk.test.whitebox.WhiteBox;
-import nsk.share.test.ExecutionController;
-
-public class TriggerUnloadingWithWhiteBox implements TriggerUnloadingHelper {
-
-        private final static WhiteBox wb = WhiteBox.getWhiteBox();
-
-        @Override
-        public void triggerUnloading(ExecutionController stresser) {
-                wb.fullGC();
-        }
-
+public class HelloSystemd {
+    public static void main(String args[]) {
+        System.out.println("Hello Systemd");
+    }
 }

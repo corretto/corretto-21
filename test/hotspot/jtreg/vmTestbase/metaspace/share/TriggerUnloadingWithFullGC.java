@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,16 @@
  * questions.
  */
 
+package metaspace.share;
 
-/*
- * @test
- *
- * @summary converted from VM Testbase nsk/jvmti/ResourceExhausted/resexhausted003.
- * VM Testbase keywords: [jpda, jvmti, noras, vm6, quarantine]
- * VM Testbase comments: 6606767
- * VM Testbase readme:
- * Description
- *      Test verifies that ResourceExhausted JVMTI event is generated for
- *      PermGen OOME by creating class loaders and classes
- * Comments
- *      CR 6465063
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm/native
- *      -agentlib:resexhausted=-waittime=5
- *      -XX:MaxMetaspaceSize=20m
- *      nsk.jvmti.ResourceExhausted.resexhausted003
- */
+import jdk.test.lib.classloader.ClassUnloadCommon;
+import nsk.share.test.ExecutionController;
 
+public class TriggerUnloadingWithFullGC implements TriggerUnloadingHelper {
+
+        @Override
+        public void triggerUnloading(ExecutionController stresser) {
+                ClassUnloadCommon.triggerUnloading();
+        }
+
+}
