@@ -2,6 +2,41 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.8.9.1
+Release Date: July 15, 2025
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
++ Windows 10 or later, x86_64
++ macos 13.0 and later, x86_64
++ macos 13.0 and later, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto)
+in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.8.9.1:
+
+| Issue Name | Platform | Description | Link |
+|------------|----------|-------------|------|
+| Import jdk-21.0.8+9 | All | Updates Corretto baseline to OpenJDK 21.0.8+9 | https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.8+9 |
+| JDK-8353013 | All | java.net.URI.create(String) may have low performance to scan the host/domain name from URI string when the hostname starts with number | [PR-101](https://github.com/corretto/corretto-21/pull/101) |
+| JDK-8349705 | All | java.net.URI.scanIPv4Address throws unnecessary URISyntaxException | [PR-102](https://github.com/corretto/corretto-21/pull/102) |
+
+The following CVEs are addressed in 21.0.8.9.1:
+
+| CVE | CVSS | Component |
+|-----|------|-----------|
+| CVE-2025-50059 | 8.6 | core-libs/java.net |
+| CVE-2025-30749 | 8.1 | client-libs/2d |
+| CVE-2025-50106 | 8.1 | client-libs/2d |
+| CVE-2025-30754 | 4.8 | security-libs/javax.net.ssl |
+
 ## Corretto version: 21.0.7.6.1
 Release Date: April 15, 2025
 
