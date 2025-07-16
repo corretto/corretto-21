@@ -24,7 +24,7 @@ The following issues are addressed in 21.0.8.9.1:
 
 | Issue Name | Platform | Description | Link |
 |------------|----------|-------------|------|
-| Import jdk-21.0.8+9 | All | Updates Corretto baseline to OpenJDK 21.0.8+9 | https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.8+9 |
+| Import jdk-21.0.8+9 | All | Updates Corretto baseline to OpenJDK 21.0.8+9 | [jdk-21.0.8+9](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.8+9) |
 | JDK-8353013 | All | java.net.URI.create(String) may have low performance to scan the host/domain name from URI string when the hostname starts with number | [PR-101](https://github.com/corretto/corretto-21/pull/101) |
 | JDK-8349705 | All | java.net.URI.scanIPv4Address throws unnecessary URISyntaxException | [PR-102](https://github.com/corretto/corretto-21/pull/102) |
 
@@ -59,7 +59,7 @@ The following issues are addressed in 21.0.7.6.1:
 
 | Issue Name | Platform | Description | Link |
 |------------|----------|-------------|------|
-| Import jdk-21.0.7+6 | All | Updates Corretto baseline to OpenJDK 21.0.7+6 | https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.7+6 |
+| Import jdk-21.0.7+6 | All | Updates Corretto baseline to OpenJDK 21.0.7+6 | [jdk-21.0.7+6](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.7+6) |
 | (tz) Update Timezone Data to 2025b | All | Update tz code and data to use 2025b release | [JDK-8352716](https://bugs.openjdk.org/browse/JDK-8352716) |
 
 The following CVEs are addressed in 21.0.7.6.1:
@@ -92,9 +92,9 @@ The following issues are addressed in 21.0.6.7.1:
 
 | Issue Name          | Platform | Description                                   | Link                                                         |
 |---------------------|----------|-----------------------------------------------|--------------------------------------------------------------|
-| Import jdk-21.0.6+7 | All      | Updates Corretto baseline to OpenJDK 21.0.6+7 | https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.6+7  |
-| JDK-8345296         | aarch64    | AArch64: VM crashes with SIGILL when prctl is disallowed | https://bugs.openjdk.org/browse/JDK-8345296                  |
-| JDK-8341194                | aarch64      | Implement C2 VectorizedHashCode on AArch64 | https://bugs.openjdk.org/browse/JDK-8341194                  |
+| Import jdk-21.0.6+7 | All      | Updates Corretto baseline to OpenJDK 21.0.6+7 | [jdk-21.0.6+7](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.6+7)  |
+| JDK-8345296         | aarch64    | AArch64: VM crashes with SIGILL when prctl is disallowed | [JDK-8345296](https://bugs.openjdk.org/browse/JDK-8345296)                  |
+| JDK-8341194                | aarch64      | Implement C2 VectorizedHashCode on AArch64 | [JDK-8341194](https://bugs.openjdk.org/browse/JDK-8341194)                  |
 
 
 The following CVEs are addressed in 21.0.6.7.1:
@@ -126,19 +126,19 @@ The following issues are addressed in 21.0.5.11.1:
 
 | Issue Name           | Platform | Description                                                                             | Link                                                                         |
 |----------------------|----------|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
-| Import jdk-21.0.5+11 | All      | Updates Corretto baseline to OpenJDK 21.0.5+11                                          | https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.5+11 |
-| JDK-8329995          | Linux    | Restricted access to `/proc` can cause JFR initialization to crash                      | https://bugs.openjdk.org/browse/JDK-8329995 |
-| JDK-8325616          | All      | JFR ZGC Allocation Stall events should record stack traces                              | https://bugs.openjdk.org/browse/JDK-8325616 |
-| JDK-8301686          | All      | TLS 1.3 handshake fails if server_name doesn't match resuming session                   | https://bugs.openjdk.org/browse/JDK-8301686 |
-| JDK-8330133          | Linux, macos | libj2pkcs11.so crashes on some pkcs#11 v3.0 libraries                               | https://bugs.openjdk.org/browse/JDK-8330133 |
-| JDK-8332248          | All      | (fc) java/nio/channels/FileChannel/BlockDeviceSize.java failed with RuntimeException    | https://bugs.openjdk.org/browse/JDK-8332248 |
-| JDK-8328896          | Linux, Windows | Fontmetrics for large Fonts has zero width                                        | https://bugs.openjdk.org/browse/JDK-8328896 |
-| JDK-6967482          | Windows  | TAB-key does not work in JTables after selecting details-view in JFileChooser           | https://bugs.openjdk.org/browse/JDK-6967482 |
-| JDK-8166352          | Windows  | FilePane.createDetailsView() removes JTable TAB, SHIFT-TAB functionality                | https://bugs.openjdk.org/browse/JDK-8166352 |
-| JDK-8333542          | All      | Breakpoint in parallel code does not work                                               | https://bugs.openjdk.org/browse/JDK-8333542 |
-| JDK-8321509          | aarch64  | False positive in get_trampoline fast path causes crash                                 | https://bugs.openjdk.org/browse/JDK-8321509 |
-| JDK-8337664          | All      | Distrust TLS server certificates issued after Oct 2024 and anchored by Entrust Root CAs | https://bugs.openjdk.org/browse/JDK-8337664 |
-| JDK-8338696          | Linux    | (fs) BasicFileAttributes.creationTime() falls back to epoch if birth time is unavailable | https://bugs.openjdk.org/browse/JDK-8338696 |
+| Import jdk-21.0.5+11 | All      | Updates Corretto baseline to OpenJDK 21.0.5+11                                          | [jdk-21.0.5+11](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.5+11) |
+| JDK-8329995          | Linux    | Restricted access to `/proc` can cause JFR initialization to crash                      | [JDK-8329995](https://bugs.openjdk.org/browse/JDK-8329995) |
+| JDK-8325616          | All      | JFR ZGC Allocation Stall events should record stack traces                              | [JDK-8325616](https://bugs.openjdk.org/browse/JDK-8325616) |
+| JDK-8301686          | All      | TLS 1.3 handshake fails if server_name doesn't match resuming session                   | [JDK-8301686](https://bugs.openjdk.org/browse/JDK-8301686) |
+| JDK-8330133          | Linux, macos | libj2pkcs11.so crashes on some pkcs#11 v3.0 libraries                               | [JDK-8330133](https://bugs.openjdk.org/browse/JDK-8330133) |
+| JDK-8332248          | All      | (fc) java/nio/channels/FileChannel/BlockDeviceSize.java failed with RuntimeException    | [JDK-8332248](https://bugs.openjdk.org/browse/JDK-8332248) |
+| JDK-8328896          | Linux, Windows | Fontmetrics for large Fonts has zero width                                        | [JDK-8328896](https://bugs.openjdk.org/browse/JDK-8328896) |
+| JDK-6967482          | Windows  | TAB-key does not work in JTables after selecting details-view in JFileChooser           | [JDK-6967482](https://bugs.openjdk.org/browse/JDK-6967482) |
+| JDK-8166352          | Windows  | FilePane.createDetailsView() removes JTable TAB, SHIFT-TAB functionality                | [JDK-8166352](https://bugs.openjdk.org/browse/JDK-8166352) |
+| JDK-8333542          | All      | Breakpoint in parallel code does not work                                               | [JDK-8333542](https://bugs.openjdk.org/browse/JDK-8333542) |
+| JDK-8321509          | aarch64  | False positive in get_trampoline fast path causes crash                                 | [JDK-8321509](https://bugs.openjdk.org/browse/JDK-8321509) |
+| JDK-8337664          | All      | Distrust TLS server certificates issued after Oct 2024 and anchored by Entrust Root CAs | [JDK-8337664](https://bugs.openjdk.org/browse/JDK-8337664) |
+| JDK-8338696          | Linux    | (fs) BasicFileAttributes.creationTime() falls back to epoch if birth time is unavailable | [JDK-8338696](https://bugs.openjdk.org/browse/JDK-8338696) |
 
 
 The following CVEs are addressed in 21.0.5.11.1:
