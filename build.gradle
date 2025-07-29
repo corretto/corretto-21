@@ -98,6 +98,15 @@ allprojects {
                 "--with-vendor-version-string=Corretto-${project.version.full}"
         ]
 
+        // Add headless support
+        is_headless = project.hasProperty("headless") ? Boolean.parseBoolean(project.getProperty('headless')) : false
+        correttoCommonFlags += '--enable-headless-only=' + (is_headless ? "yes" : "no")
+
+        // Add minimal variant support
+        if (project.hasProperty("variant") && project.getProperty('variant') == 'minimal') {
+            correttoCommonFlags += ['--with-jvm-variants=minimal']
+        }
+
         // If this is a certified release build, exclude the README.JAVASE file
         excludeReadmeJavaSE = Boolean.parseBoolean(project.findProperty("corretto.excludeReadmeJavaSE"))
         rootFiles = ['ADDITIONAL_LICENSE_INFO', 'ASSEMBLY_EXCEPTION', 'LICENSE', 'README.md', 'commitId.txt', 'version.txt']
@@ -213,15 +222,20 @@ allprojects {
 
         // Call toString explicitly to avoid lazy evaluation
         jdkImageName = "${os}-${jdkArch}-server-${correttoDebugLevel}".toString()
+       
+        // Add suffixes for headless and minimal
+        headlessSuffix = is_headless ? "-headless" : ""
+        minimalSuffix = (project.hasProperty("variant") && project.getProperty('variant') == 'minimal') ? "-minimal" : ""
+        
         // no debug level suffix for release build
         if (correttoDebugLevel == "release") {
-            correttoJdkArchiveName = "amazon-corretto-${project.version.full}-${os}-${correttoArch}".toString()
+            correttoJdkArchiveName = "amazon-corretto-${project.version.full}-${os}-${correttoArch}${headlessSuffix}${minimalSuffix}".toString()
         } else {
             correttoJdkArchiveName =
-                    "amazon-corretto-${project.version.full}-${os}-${correttoArch}-${correttoDebugLevel}".toString()
+                    "amazon-corretto-${project.version.full}-${os}-${correttoArch}${headlessSuffix}${minimalSuffix}-${correttoDebugLevel}".toString()
         }
-        correttoDebugSymbolsArchiveName = "amazon-corretto-debugsymbols-${project.version.full}-${os}-${correttoArch}".toString()
-        correttoTestImageArchiveName = "amazon-corretto-testimage-${project.version.full}-${os}-${correttoArch}".toString()
+        correttoDebugSymbolsArchiveName = "amazon-corretto-debugsymbols-${project.version.full}-${os}-${correttoArch}${headlessSuffix}${minimalSuffix}".toString()
+        correttoTestImageArchiveName = "amazon-corretto-testimage-${project.version.full}-${os}-${correttoArch}${headlessSuffix}${minimalSuffix}".toString()
     }
 }
 
