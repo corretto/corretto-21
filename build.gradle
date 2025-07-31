@@ -219,9 +219,7 @@ allprojects {
             default:
                 throw new GradleException("${jdkArch} is not supported")
         }
-
-        // Call toString explicitly to avoid lazy evaluation
-        jdkImageName = "${os}-${jdkArch}-server-${correttoDebugLevel}".toString()
+        jdkImageName = "${os}-${jdkArch}-${project.hasProperty('variant') && project.getProperty('variant') == 'minimal' ? 'minimal' : 'server'}-${correttoDebugLevel}".toString()
        
         // Add suffixes for headless and minimal
         headlessSuffix = is_headless ? "-headless" : ""
