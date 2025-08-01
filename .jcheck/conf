@@ -1,7 +1,7 @@
 [general]
-project=shenandoah
+project=jdk-updates
 jbs=JDK
-version=repo-shenandoah-21
+version=21.0.9
 
 [checks]
 error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace,problemlists
@@ -23,7 +23,7 @@ ignore-tabs=.*\.gmk|Makefile
 message=Merge
 
 [checks "reviewers"]
-committers=1
+reviewers=1
 ignore=duke
 
 [checks "committer"]
