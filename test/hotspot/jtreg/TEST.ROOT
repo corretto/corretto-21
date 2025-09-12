@@ -86,7 +86,7 @@ requires.properties= \
     vm.asan \
     vm.ubsan \
     vm.flagless \
-    docker.support \
+    container.support \
     systemd.support \
     jdk.containerized
 
