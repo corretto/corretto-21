@@ -80,6 +80,8 @@ public:
     return _age_census;
   }
 
+  inline bool is_tenurable(const ShenandoahHeapRegion* r) const;
+
   ShenandoahEvacuationTracker* evac_tracker() const {
     return _evac_tracker;
   }
