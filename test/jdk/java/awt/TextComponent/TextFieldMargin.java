@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,50 +23,45 @@
 
 /*
  * @test
- * @bug 4967768
- * @requires (os.family != "mac")
- * @summary Tests that underline is painted correctly in mnemonics
+ * @bug 4129511
+ * @summary Tests that TextField margins are not exceedingly wide
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual bug4967768
+ * @run main/manual TextFieldMargin
  */
 
-import java.awt.Font;
-import javax.swing.JButton;
-import javax.swing.JPanel;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Label;
+import java.awt.TextArea;
+import java.awt.TextField;
 
-public class bug4967768 {
-    private static final String INSTRUCTIONS = """
-            When the test starts you'll see a button "Oops".
-
-            For Windows and GTK Look and Feel, you will need to
-            press the ALT key to make the mnemonic visible.
-            Once the ALT key is pressed, the letter "p" will be
-            underlined at the bottom of the instruction frame.
-
-            Ensure the underline cuts through the descender
-            of letter "p", i.e. the underline is painted
-            not below the letter but below the baseline.
-
-            Press Pass if you see the expected behaviour else
-            press Fail.
-            """;
-
+public class TextFieldMargin {
     public static void main(String[] args) throws Exception {
+        String INSTRUCTIONS = """
+                1. Examine the TextField, Label, and TextArea to see
+                   that the text is vertically aligned along the left
+                2. If all are aligned along the left, then test PASS,
+                   else test FAILS.
+                """;
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .columns(35)
-                .splitUIBottom(bug4967768::createTestUI)
+                .testUI(TextFieldMargin::initialize)
                 .build()
                 .awaitAndCheck();
     }
 
-    private static JPanel createTestUI() {
-        JPanel panel = new JPanel();
-        JButton but = new JButton("Oops");
-        but.setFont(new Font("Dialog", Font.BOLD, 24));
-        but.setMnemonic('p');
-        panel.add(but);
-        return panel;
+    public static Frame initialize() {
+        Frame frame = new Frame("Frame with a text field & a label");
+        frame.setLayout(new GridLayout(5, 1));
+        TextField text_field = new TextField("Left Textfield");
+        frame.add(text_field);
+        Label label = new Label("Left Label");
+        frame.add(label);
+        TextArea text_area = new TextArea("Left Textfield");
+        frame.add(text_area);
+        frame.setBounds(50, 50, 300, 300);
+        return frame;
     }
 }
