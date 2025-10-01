@@ -41,6 +41,7 @@ ext {
 }
 def jdkResultingImage = "$buildRoot/build/linux-${arch}-server-${correttoDebugLevel}/images/jdk"
 def testResultingImage = "$buildRoot/build/linux-${arch}-server-${correttoDebugLevel}/images/test"
+def thirdPartyBinaries = "${project.rootDir}/third-party-binaries"
 
 // deps
 def depsMap = [:]
@@ -108,6 +109,17 @@ task createTestImage(type: Exec) {
     commandLine 'make','test-image'
 }
 
+task bundleThirdPartyBinaries(type: Exec) {
+    dependsOn executeBuild
+    // Copy pre-populated third party binaries if present
+    if (file(thirdPartyBinaries).exists()) {
+        commandLine 'cp','-rn',"${thirdPartyBinaries}/.","${jdkResultingImage}"
+    }
+    else {
+        commandLine 'echo','No third party binaries found, skipping bundling...'
+    }
+}
+
 task packageTestImage(type: Tar) {
     dependsOn createTestImage
     description 'Package test results'
@@ -136,6 +148,7 @@ task packageBuildResults(type: Tar) {
     description 'Compresses the JDK image and puts the results in build/distributions.'
     dependsOn packageDebugSymbols
     dependsOn executeBuild
+    dependsOn bundleThirdPartyBinaries
     archiveName "amazon-corretto-${project.version.full}-alpine-linux-${arch_alias}.tar.gz"
     compression Compression.GZIP
     from(buildRoot) {
