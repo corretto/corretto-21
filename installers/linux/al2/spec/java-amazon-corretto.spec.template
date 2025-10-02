@@ -23,6 +23,7 @@
 %global java_version    $java_version
 %global java_major_version    $java_spec_version
 %global java_security_version    $java_security_version
+%global bundle_async_profiler    $bundle_binaries
 %global build_id        $build_id
 %global release_id      $release_id
 %global version_opt     $version_opt
@@ -296,6 +297,14 @@ bash ./configure \\
 make images
 make LOG=debug docs
 
+# Copying async profiler binaries if global variable is set
+%if "%{bundle_async_profiler}" == "true"
+echo "Including async profiler binaries..."
+cp third-party-binaries/bin/asprof %{java_imgdir}/jdk/bin/asprof
+cp third-party-binaries/bin/jfrconv %{java_imgdir}/jdk/bin/jfrconv
+cp third-party-binaries/lib/libasyncProfiler.so %{java_imgdir}/jdk/lib/libasyncProfiler.so
+%endif
+
 %install
 rm -rf %{buildroot}
 install -d -m 755 %{buildroot}%{java_home}
@@ -427,6 +436,11 @@ fi
 %{java_home}/conf
 %{java_home}/legal
 %{java_home}/lib
+%if "%{bundle_async_profiler}" == "true"
+%{java_home}/bin/asprof
+%{java_home}/bin/jfrconv
+%{java_home}/lib/libasyncProfiler.so
+%endif
 %dir %{java_home}/man
 %dir %{java_home}/man/man1
 %{java_home}/man/man1/java.1
@@ -448,6 +462,11 @@ fi
 %{java_home}/bin/javac
 %{java_home}/bin/javadoc
 %{java_home}/bin/javap
+%if "%{bundle_async_profiler}" == "true"
+%{java_home}/bin/asprof
+%{java_home}/bin/jfrconv
+%{java_home}/lib/libasyncProfiler.so
+%endif
 %{java_home}/bin/jcmd
 %{java_home}/bin/jconsole
 %{java_home}/bin/jdb
