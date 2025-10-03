@@ -84,7 +84,7 @@ task copySourceTar(type: Tar) {
             into 'third-party-binaries'
         }
         from(thirdPartyLegal) {
-            into "${jdkResultingImage}/legal"
+            into "legal"
         }
     }
 }
