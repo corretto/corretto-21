@@ -42,6 +42,7 @@ ext {
 def jdkResultingImage = "$buildRoot/build/linux-${arch}-server-${correttoDebugLevel}/images/jdk"
 def testResultingImage = "$buildRoot/build/linux-${arch}-server-${correttoDebugLevel}/images/test"
 def thirdPartyBinaries = "${project.rootDir}/third-party-binaries"
+def thirdPartyLegal = "${project.rootDir}/installers/legal"
 
 // deps
 def depsMap = [:]
@@ -109,14 +110,20 @@ task createTestImage(type: Exec) {
     commandLine 'make','test-image'
 }
 
-task bundleThirdPartyBinaries(type: Exec) {
+task bundleThirdPartyBinaries {
     dependsOn executeBuild
-    // Copy pre-populated third party binaries if present
-    if (file(thirdPartyBinaries).exists()) {
-        commandLine 'cp','-rn',"${thirdPartyBinaries}/.","${jdkResultingImage}"
-    }
-    else {
-        commandLine 'echo','No third party binaries found, skipping bundling...'
+    doLast {
+        // Copy pre-populated third party binaries if present
+        if (file(thirdPartyBinaries).exists()) {
+            copy {
+                from thirdPartyBinaries
+                into jdkResultingImage
+            }
+            copy {
+                from thirdPartyLegal
+                into "${jdkResultingImage}/legal"
+            }
+        }
     }
 }
 
