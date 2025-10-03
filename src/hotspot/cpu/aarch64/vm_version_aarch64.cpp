@@ -57,8 +57,13 @@ static SpinWait get_spin_wait_desc() {
     return SpinWait(SpinWait::ISB, OnSpinWaitInstCount);
   } else if (strcmp(OnSpinWaitInst, "yield") == 0) {
     return SpinWait(SpinWait::YIELD, OnSpinWaitInstCount);
+  } else if (strcmp(OnSpinWaitInst, "sb") == 0) {
+    if (!VM_Version::supports_sb()) {
+      vm_exit_during_initialization("OnSpinWaitInst is SB but current CPU does not support SB instruction");
+    }
+    return SpinWait(SpinWait::SB, OnSpinWaitInstCount);
   } else if (strcmp(OnSpinWaitInst, "none") != 0) {
-    vm_exit_during_initialization("The options for OnSpinWaitInst are nop, isb, yield, and none", OnSpinWaitInst);
+    vm_exit_during_initialization("The options for OnSpinWaitInst are nop, isb, yield, sb, and none", OnSpinWaitInst);
   }
 
   if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount > 0) {
@@ -225,7 +230,11 @@ void VM_Version::initialize() {
     }
 
     if (FLAG_IS_DEFAULT(OnSpinWaitInst)) {
-      FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
+      if (model_is(0xd4f) && VM_Version::supports_sb()) {
+        FLAG_SET_DEFAULT(OnSpinWaitInst, "sb");
+      } else {
+        FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
+      }
     }
 
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
