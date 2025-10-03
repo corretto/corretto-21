@@ -84,7 +84,7 @@ task copySourceTar(type: Tar) {
             into 'third-party-binaries'
         }
         from(thirdPartyLegal) {
-            into "legal"
+            into "third-party-binaries/legal"
         }
     }
 }

@@ -303,6 +303,7 @@ echo "Including async profiler binaries..."
 cp third-party-binaries/bin/asprof %{java_imgdir}/jdk/bin/asprof
 cp third-party-binaries/bin/jfrconv %{java_imgdir}/jdk/bin/jfrconv
 cp third-party-binaries/lib/libasyncProfiler.so %{java_imgdir}/jdk/lib/libasyncProfiler.so
+cp third-party-binaries/legal/async-profiler.md %{java_imgdir}/jdk/legal/async-profiler.md
 %endif
 
 %install
