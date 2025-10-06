@@ -90,26 +90,9 @@ task executeTestBuild(type: Exec) {
     commandLine 'make','test-image'
 }
 
-task bundleThirdPartyBinaries {
-    dependsOn executeBuild
-    doLast {
-        // Copy pre-populated third party binaries if present
-        if (file(thirdPartyBinaries).exists()) {
-            copy {
-                from thirdPartyBinaries
-                into "${jdkResultingImage}/Contents/Home"
-            }
-            copy {
-                from thirdPartyLegal
-                into "${jdkResultingImage}/Contents/Home/legal"
-            }
-        }
-    }
-}
-
+// TODO: Clean up include license, readme...
 task prepareArtifacts {
     dependsOn executeBuild
-    dependsOn bundleThirdPartyBinaries
     doLast {
         if(file("${jdkResultingImage}/${correttoMacDir}").exists()) {
             delete "${jdkResultingImage}/${correttoMacDir}"
@@ -137,6 +120,19 @@ task prepareArtifacts {
             }
             into "${jdkResultingImage}/${correttoMacDir}/Contents"
         }
+
+        // Copy pre-populated third party binaries if present
+        if (file(thirdPartyBinaries).exists()) {
+            copy {
+                from thirdPartyBinaries
+                into "${jdkResultingImage}/${correttoMacDir}/Contents/Home"
+            }
+            copy {
+                from thirdPartyLegal
+                into "${jdkResultingImage}/${correttoMacDir}/Contents/Home/legal"
+            }
+        }
+        
         // Filter files
         if(file("${buildDir}/${correttoMacDir}").exists()) {
             delete "${buildDir}/${correttoMacDir}"
