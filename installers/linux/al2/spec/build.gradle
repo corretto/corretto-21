@@ -31,8 +31,6 @@ def tarVersion = "${version.major}.${version.minor}.${version.security}+${versio
 def javaVersion = "${version.major}.${version.minor}.${version.security}"
 def buildId = "${version.build}"
 def releaseId = "${version.revision}"
-def thirdPartyBinaries = "${project.rootDir}/third-party-binaries"
-def thirdPartyLegal = "${project.rootDir}/installers/legal"
 
 /**
  * Apply version numbers to the RPM spec file template and copy
@@ -54,7 +52,6 @@ task inflateRpmSpec {
                     release_id          : releaseId,
                     version_opt         : versionOpt,
                     debug_level         : correttoDebugLevel,
-                    bundle_binaries     : file(thirdPartyBinaries).exists() ? "true" : "false",
                     boot_jdk_major_version : version.major.toInteger(),
                     experimental_feature: project.findProperty("corretto.experimental_feature") ?: "%{nil}",
                     additional_configure_options: project.findProperty("corretto.additional_configure_options") ?: "%{nil}",
@@ -75,17 +72,6 @@ task copySourceTar(type: Tar) {
     }
     from(tarTree(project.configurations.compile.singleFile)) {
         into '/'
-    }
-
-    // Copy pre-populated third party binaries if present
-    if (file(thirdPartyBinaries).exists()) {
-        from(thirdPartyBinaries) {
-            include 'bin/**', 'lib/**'
-            into 'third-party-binaries'
-        }
-        from(thirdPartyLegal) {
-            into "third-party-binaries/legal"
-        }
     }
 }
 
