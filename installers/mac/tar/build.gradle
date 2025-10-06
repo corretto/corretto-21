@@ -97,11 +97,11 @@ task bundleThirdPartyBinaries {
         if (file(thirdPartyBinaries).exists()) {
             copy {
                 from thirdPartyBinaries
-                into jdkResultingImage
+                into "${jdkResultingImage}/Contents/Home"
             }
             copy {
                 from thirdPartyLegal
-                into "${jdkResultingImage}/legal"
+                into "${jdkResultingImage}/Contents/Home/legal"
             }
         }
     }
