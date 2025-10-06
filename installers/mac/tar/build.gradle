@@ -125,6 +125,7 @@ task prepareArtifacts {
         if (file(thirdPartyBinaries).exists()) {
             copy {
                 from thirdPartyBinaries
+                include 'bin/**', 'lib/**'
                 into "${jdkResultingImage}/${correttoMacDir}/Contents/Home"
             }
             copy {
@@ -132,7 +133,7 @@ task prepareArtifacts {
                 into "${jdkResultingImage}/${correttoMacDir}/Contents/Home/legal"
             }
         }
-        
+
         // Filter files
         if(file("${buildDir}/${correttoMacDir}").exists()) {
             delete "${buildDir}/${correttoMacDir}"

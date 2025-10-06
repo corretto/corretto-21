@@ -117,6 +117,7 @@ task bundleThirdPartyBinaries {
         if (file(thirdPartyBinaries).exists()) {
             copy {
                 from thirdPartyBinaries
+                include 'bin/**', 'lib/**'
                 into jdkResultingImage
             }
             copy {

@@ -80,7 +80,7 @@ task copySourceTar(type: Tar) {
     // Copy pre-populated third party binaries if present
     if (file(thirdPartyBinaries).exists()) {
         from(thirdPartyBinaries) {
-            include "**/*"
+            include 'bin/**', 'lib/**'
             into 'third-party-binaries'
         }
         from(thirdPartyLegal) {
