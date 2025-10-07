@@ -129,7 +129,7 @@ task prepareArtifacts {
                 into "${jdkResultingImage}/${correttoMacDir}/Contents/Home"
             }
             copy {
-                from project.thirdPartyLegal
+                from project.asyncProfilerLegal
                 into "${jdkResultingImage}/${correttoMacDir}/Contents/Home/legal"
             }
         }

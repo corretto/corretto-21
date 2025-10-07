@@ -122,7 +122,7 @@ task bundleThirdPartyBinaries {
                 into jdkResultingImage
             }
             copy {
-                from project.thirdPartyLegal
+                from project.asyncProfilerLegal
                 into "${jdkResultingImage}/legal"
             }
         }
