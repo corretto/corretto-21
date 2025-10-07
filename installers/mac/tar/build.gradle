@@ -90,7 +90,6 @@ task executeTestBuild(type: Exec) {
     commandLine 'make','test-image'
 }
 
-// TODO: Clean up include license, readme...
 task prepareArtifacts {
     dependsOn executeBuild
     doLast {
