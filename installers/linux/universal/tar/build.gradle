@@ -81,6 +81,7 @@ task configureBuild(type: Exec) {
             "--with-zlib=system"
     ]
     // Common flags
+    command += project.correttoCommonFlags
     commandLine command.flatten()
 
 }
