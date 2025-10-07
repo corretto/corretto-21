@@ -31,7 +31,6 @@ if (project.correttoArch == 'x86') {
 def imageDir = "$buildRoot/build/${project.jdkImageName}/images"
 def jdkResultingImage = "${imageDir}/jdk"
 def testResultingImage = "${imageDir}/test"
-def thirdPartyLegal = "${project.rootDir}/installers/legal"
 
 // deps
 def depsMap = [:]
@@ -112,7 +111,7 @@ task bundleThirdPartyBinaries {
                 into jdkResultingImage
             }
             copy {
-                from thirdPartyLegal
+                from project.thirdPartyLegal
                 into "${jdkResultingImage}/legal"
             }
         }

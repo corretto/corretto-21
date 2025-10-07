@@ -136,6 +136,7 @@ allprojects {
 
         // If thirdPartyBinariesPath provided, store for easy reference when bundling
         thirdPartyBinariesPath = project.findProperty("thirdPartyBinariesPath") ?: ""
+        thirdPartyLegal = "${rootDir}/installers/legal"
 
         // Valid value: null, release, debug, fastdebug, slowdebug
         correttoDebugLevel = "release" // Default: release
