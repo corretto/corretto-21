@@ -31,7 +31,6 @@ def tarVersion = "${version.major}.${version.minor}.${version.security}+${versio
 def javaVersion = "${version.major}.${version.minor}.${version.security}"
 def buildId = "${version.build}"
 def releaseId = "${version.revision}"
-
 /**
  * Apply version numbers to the RPM spec file template and copy
  * to the build root.
