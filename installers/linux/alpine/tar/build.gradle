@@ -41,7 +41,6 @@ ext {
 }
 def jdkResultingImage = "$buildRoot/build/linux-${arch}-server-${correttoDebugLevel}/images/jdk"
 def testResultingImage = "$buildRoot/build/linux-${arch}-server-${correttoDebugLevel}/images/test"
-def thirdPartyBinaries = "${project.rootDir}/third-party-binaries"
 def thirdPartyLegal = "${project.rootDir}/installers/legal"
 
 // deps
@@ -113,10 +112,12 @@ task createTestImage(type: Exec) {
 task bundleThirdPartyBinaries {
     dependsOn executeBuild
     doLast {
-        // Copy pre-populated third party binaries if present
-        if (file(thirdPartyBinaries).exists()) {
+        if (project.thirdPartyBinariesPath != "") {
+            if (!file(project.thirdPartyBinariesPath).isDirectory()) {
+                throw new GradleException("thirdPartyBinariesPath is not a valid directory: ${project.thirdPartyBinariesPath}")
+            }
             copy {
-                from thirdPartyBinaries
+                from project.thirdPartyBinariesPath
                 include 'bin/**', 'lib/**'
                 into jdkResultingImage
             }

@@ -134,6 +134,9 @@ allprojects {
             correttoCommonFlags += ["--with-jmh=${jmh}"]
         }
 
+        // If thirdPartyBinariesPath provided, store for easy reference when bundling
+        thirdPartyBinariesPath = project.findProperty("thirdPartyBinariesPath") ?: ""
+
         // Valid value: null, release, debug, fastdebug, slowdebug
         correttoDebugLevel = "release" // Default: release
         switch(project.findProperty("corretto.debug_level")) {

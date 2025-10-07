@@ -35,7 +35,6 @@ def imageDir= "$buildRoot/build/${project.jdkImageName}/images"
 def jdkResultingImage = "${imageDir}/jdk-bundle"
 def testResultingImage = "${imageDir}/test"
 def correttoMacDir = "amazon-corretto-${project.version.major}.jdk"
-def thirdPartyBinaries = "${project.rootDir}/third-party-binaries"
 def thirdPartyLegal = "${project.rootDir}/installers/legal"
 
 // deps
@@ -121,9 +120,12 @@ task prepareArtifacts {
         }
 
         // Copy pre-populated third party binaries if present
-        if (file(thirdPartyBinaries).exists()) {
+        if (project.thirdPartyBinariesPath != "") {
+            if (!file(project.thirdPartyBinariesPath).isDirectory()) {
+                throw new GradleException("thirdPartyBinariesPath is not a valid directory: ${project.thirdPartyBinariesPath}")
+            }
             copy {
-                from thirdPartyBinaries
+                from project.thirdPartyBinariesPath
                 include 'bin/**', 'lib/**'
                 into "${jdkResultingImage}/${correttoMacDir}/Contents/Home"
             }
