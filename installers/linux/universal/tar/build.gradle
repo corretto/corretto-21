@@ -101,12 +101,13 @@ task createTestImage(type: Exec) {
 task bundleThirdPartyBinaries {
     dependsOn executeBuild
     doLast {
-        if (project.thirdPartyBinariesPath != "") {
-            if (!file(project.thirdPartyBinariesPath).isDirectory()) {
-                throw new GradleException("thirdPartyBinariesPath is not a valid directory: ${project.thirdPartyBinariesPath}")
+        // If property set, copy async profiler binaries to bundle
+        if (project.asyncProfilerBinariesPath != "") {
+            if (!file(project.asyncProfilerBinariesPath).isDirectory()) {
+                throw new GradleException("asyncProfilerBinariesPath is not a valid directory: ${project.asyncProfilerBinariesPath}")
             }
             copy {
-                from project.thirdPartyBinariesPath
+                from project.asyncProfilerBinariesPath
                 include 'bin/**', 'lib/**'
                 into jdkResultingImage
             }
