@@ -44,6 +44,7 @@ public class VersionCheck extends TestHelper {
 
     // tools that do not accept -J-option
     static final String[] BLACKLIST_JOPTION = {
+        "asprof",
         "controlpanel",
         "jabswitch",
         "java-rmi",
@@ -57,6 +58,7 @@ public class VersionCheck extends TestHelper {
         "javaw",
         "javaws",
         "jcontrol",
+        "jfrconv",
         "jmc",
         "jmc.ini",
         "jweblauncher",
@@ -68,6 +70,7 @@ public class VersionCheck extends TestHelper {
     // tools that do not accept -version
     static final String[] BLACKLIST_VERSION = {
         "appletviewer",
+        "asprof",
         "controlpanel",
         "jaccessinspector",
         "jaccessinspector-32",
@@ -86,6 +89,7 @@ public class VersionCheck extends TestHelper {
         "jdeprscan",
         "jdeps",
         "jfr",
+        "jfrconv",
         "jimage",
         "jinfo",
         "jlink",
