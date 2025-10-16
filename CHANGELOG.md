@@ -2,6 +2,42 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.9.10.1
+Release Date: October 21, 2025
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
++ Windows 10 or later, x86_64
++ macOS 14.0 and later, x86_64
++ macOS 14.0 and later, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto)
+in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.9.10.1:
+
+| Issue Name                              | Platform                                           | Description                                                                                                                                 | Link                                                                          |
+|-----------------------------------------|----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| Import jdk-21.0.9+10                    | All                                                | Updates Corretto baseline to OpenJDK 21.0.9+10                                                                                              | [jdk-21.0.9+10](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.9+10) |
+| Bundling async profiler                 | Alpine, macOS, RPM-based Linux, Debian-based Linux | Binaries for the [async-profiler](https://github.com/async-profiler/async-profiler) are included in official builds for supported platforms | [#19](https://github.com/corretto/corretto-25/pull/19)                        |
+| JDK-8277444                             | All                                                | Addressing data race between JvmtiClassFileReconstituter::copy_bytecodes and class linking                                                  | [JDK-8277444](https://bugs.openjdk.org/browse/JDK-8277444)                    |
+| JDK-8359435                             | aarch64                                            | AArch64: add support for SB instruction to MacroAssembler::spin_wait                                                                        | [JDK-8359435](https://bugs.openjdk.org/browse/JDK-8359435)                    |
+| Set OnSpinWaitInst to SB for Graviton 4 | aarch64                                            | Default value for the OnSpinWaitInst flag to sb if the CPU model matches 0xd4f (Neoverse-V2); otherwise, it remains isb                     | [#126](https://github.com/corretto/corretto-21/pull/126)                      |
+
+The following CVEs are addressed in 21.0.9.10.1:
+
+| CVE            | CVSS | Component                   |
+|----------------|------|-----------------------------|
+| CVE-2025-53057 | 5.9  | security-libs/java.security |
+| CVE-2025-53066 | 4.8  | xml/jaxp                    |
+| CVE-2025-61748 | 3.7  | core-libs                   |
+
 ## Corretto version: 21.0.8.9.1
 Release Date: July 15, 2025
 
