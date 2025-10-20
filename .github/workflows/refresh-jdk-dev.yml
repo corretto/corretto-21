@@ -3,6 +3,10 @@ on:
   schedule:
     - cron: '0 9 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 env:
   UPSTREAM_REMOTE: https://github.com/openjdk/jdk21u-dev
   LOCAL_BRANCH: nightly
