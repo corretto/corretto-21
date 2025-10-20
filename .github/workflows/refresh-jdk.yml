@@ -3,6 +3,10 @@ on:
   schedule:
     - cron: '0 8 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 env:
   UPSTREAM_REMOTE: https://github.com/openjdk/jdk21u
   UPSTREAM_SHENANDOAH: https://github.com/openjdk/shenandoah-jdk21u
