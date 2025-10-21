@@ -6,6 +6,9 @@ on:
 env:
   UPSTREAM_REMOTE: https://github.com/openjdk/jdk21u-dev
   LOCAL_BRANCH: nightly
+permissions:
+  contents: write
+
 jobs:
     refresh-jdk:
         runs-on: ubuntu-latest
