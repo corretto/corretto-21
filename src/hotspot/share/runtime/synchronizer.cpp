@@ -65,6 +65,7 @@
 #include "utilities/events.hpp"
 #include "utilities/fastHash.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
 
