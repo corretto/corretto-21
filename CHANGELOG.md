@@ -2,6 +2,29 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.9.11.1
+Release Date: November 3, 2025
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto)
+in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.9.11.1:
+
+| Issue Name                              | Platform                                           | Description                                                                                                                                 | Link                                                                          |
+|-----------------------------------------|----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| 8370572: cgroup v1 hierarchical memory limit is not honored after JDK-8322420   | Linux                                              | Backport from upstream to fix issue reading cgroups settings which can result in OOM. Also includes required pre-requisite changes. | [JDK-8370572](https://bugs.openjdk.org/browse/JDK-8370572) [Corretto-21/#135](https://github.com/corretto/corretto-21/issues/135) |
+| 8343191: Cgroup v1 subsystem fails to set subsystem path    | Linux                                              | Backport from upstream to fix issue reading cgroups whne path changes, required for JDK-8322420 and includes bug tail fixes.  | [JDK-8343191](https://bugs.openjdk.org/browse/JDK-8343191) |
+| 8365153: AArch64: Set JVM flags for Neoverse N3 and V3 cores  | All Aarch64                                                | Set Neoverse3 flags to the same as Neoverse2 | [JDK-8365153](https://bugs.openjdk.org/browse/JDK-8365153) |
+
 ## Corretto version: 21.0.9.10.1
 Release Date: October 21, 2025
 
