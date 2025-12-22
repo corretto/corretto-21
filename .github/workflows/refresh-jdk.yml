@@ -9,6 +9,9 @@ env:
   LOCAL_BRANCH: develop
   LOCAL_SHENANDOAH: generational-shenandoah
 
+permissions:
+  contents: write
+
 jobs:
     refresh-jdk:
         runs-on: ubuntu-latest
