@@ -190,9 +190,9 @@ jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
   julong memswlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
   if (memswlimit >= host_total_memsw && uses_mem_hierarchy()) {
-      CONTAINER_READ_NUMERICAL_KEY_VALUE_CHECKED(reader(), "/memory.stat",
-                                                 "hierarchical_memsw_limit", "Hierarchical Memory and Swap Limit",
-                                                 memswlimit);
+    CONTAINER_READ_NUMERICAL_KEY_VALUE_CHECKED(reader(), "/memory.stat",
+                                               "hierarchical_memsw_limit", "Hierarchical Memory and Swap Limit",
+                                               memswlimit);
   }
   verbose_log(memswlimit, host_total_memsw);
   return (jlong)((memswlimit < host_total_memsw) ? memswlimit : -1);
