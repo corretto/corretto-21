@@ -69,16 +69,12 @@ ospackage {
 
 /**
  * Uncompress and copy the universal Corretto artifact
- * tar for RPM packaging. Use native tar to correctly handle symlinks.
+ * tar for RPM packaging.
  */
-task extractUniversalTar(type: Exec) {
+task extractUniversalTar(type: Copy) {
     dependsOn project.configurations.compile
-
-    inputs.file project.configurations.compile.singleFile
-    outputs.dir jdkBinaryDir
-
-    workingDir buildRoot
-    commandLine 'tar', 'xvf', project.configurations.compile.singleFile
+    from tarTree(project.configurations.compile.singleFile)
+    into buildRoot
 }
 
 /**
