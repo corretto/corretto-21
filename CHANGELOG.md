@@ -2,6 +2,39 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.10.7.1
+Release Date: January 20, 2026
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
++ Windows 10 or later, x86_64
++ macos 14.0 and later, x86_64
++ macos 14.0 and later, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto)
+in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.10.7.1:
+
+| Issue Name | Platform | Description | Link |
+|------------|----------|-------------|------|
+| Import jdk-21.0.10+7 | All | Updates Corretto baseline to OpenJDK 21.0.10+7 | [jdk-21.0.10+7](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.10+7) |
+
+The following CVEs are addressed in 21.0.10.7.1:
+
+| CVE | CVSS | Component |
+|-----|------|-----------|
+| CVE-2026-21945 | 7.5 | security-libs/java.security |
+| CVE-2026-21932 | 7.4 | client-libs/java.awt |
+| CVE-2026-21933 | 6.1 | core-libs/java.net |
+| CVE-2026-21925 | 4.8 | core-libs/java.rmi |
+
 ## Corretto version: 21.0.9.11.1
 Release Date: November 3, 2025
 
