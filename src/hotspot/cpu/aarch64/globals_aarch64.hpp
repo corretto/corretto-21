@@ -127,6 +127,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
           range(1, 99)                                                  \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \
+  product(bool, NeoverseN1ICacheErratumMitigation, false, DIAGNOSTIC,   \
+          "Enable workaround for Neoverse N1 erratum 1542419")          \
+  product(bool, UseSingleICacheInvalidation, false, DIAGNOSTIC,         \
+          "Defer multiple ICache invalidation to single invalidation")  \
 
 // end of ARCH_FLAGS
 
