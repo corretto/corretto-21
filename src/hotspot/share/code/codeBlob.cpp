@@ -158,6 +158,11 @@ RuntimeBlob::RuntimeBlob(
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
 ) : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, cb), cb, frame_complete, frame_size, oop_maps, caller_must_gc_arguments) {
+  if (code_size() == 0) {
+    // Nothing to copy
+    return;
+  }
+
   cb->copy_code_and_locs_to(this);
 }
 

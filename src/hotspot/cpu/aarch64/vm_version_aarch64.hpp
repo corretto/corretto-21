@@ -49,6 +49,13 @@ protected:
   static bool _rop_protection;
   static uintptr_t _pac_mask;
 
+  static bool _cache_dic_enabled;
+  static bool _cache_idc_enabled;
+
+  // IC IVAU trap probe for Neoverse N1 erratum 1542419.
+  // Set by get_os_cpu_info() on Linux via ic_ivau_probe_linux_aarch64.S.
+  static bool _ic_ivau_trapped;
+
   static SpinWait _spin_wait;
 
   // Read additional info using OS-specific interfaces
@@ -194,6 +201,10 @@ enum Ampere_CPU_Model {
   static bool use_neon_for_vector(int vector_length_in_bytes) {
     return vector_length_in_bytes <= 16;
   }
+
+  static bool is_cache_dic_enabled() { return _cache_dic_enabled; }
+  static bool is_cache_idc_enabled() { return _cache_idc_enabled; }
+  static bool is_ic_ivau_trapped()   { return _ic_ivau_trapped; }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP
