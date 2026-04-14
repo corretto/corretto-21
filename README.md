@@ -21,7 +21,11 @@ _develop_
 : The default branch. The branch that consumes development and patches to upstream [openjdk/jdk21u](https://github.com/openjdk/jdk21u). Corretto builds are generated from this branch.
 
 ### Download Links
-Release builds can be found by version on the github [release page](https://github.com/corretto/corretto-21/releases). Nightly builds can be found on our [download page](https://downloads.corretto.aws/#/downloads?build=nightly&version=21).
+Corretto 21 release builds can be found on the github [release page](https://github.com/corretto/corretto-21/releases) and are also available at [downloads.corretto.aws](https://downloads.corretto.aws/#/downloads?build=production&version=21). 
+
+Corretto 21 nightly builds can be found on our [download page](https://downloads.corretto.aws/#/downloads?build=nightly&version=21).
+
+Production and nightly builds for all Corretto versions can be found at [downloads.corretto.aws/#/overview](https://downloads.corretto.aws/#/overview).
 
 ### OpenJDK Readme
 ```
