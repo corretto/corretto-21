@@ -45,11 +45,18 @@ jobs:
               shell: bash
               run: |
                 git checkout nightly
-                git restore --source origin/$LOCAL_BRANCH --staged --worktree -- version.txt
-                git commit --allow-empty -m "Ephemeral commit: Automerged version.txt from $LOCAL_BRANCH to nightly"
-                ephemeral_commit=$(git rev-parse HEAD)
-                git merge origin/$LOCAL_BRANCH
-                git rebase --onto ${ephemeral_commit}^ ${ephemeral_commit}
+                if ! git merge --no-ff --no-commit origin/$LOCAL_BRANCH; then
+                  # The only conflict we expect/accept is version.txt
+                  unmerged=$(git diff --name-only --diff-filter=U)
+                  if [ "$unmerged" != "version.txt" ]; then
+                    echo "Unexpected merge conflicts: $unmerged" >&2
+                    exit 1
+                  fi
+                fi
+                # Always keep nightly's version.txt — whether the merge was clean or conflicted
+                git checkout HEAD -- version.txt
+                git add version.txt
+                git commit -m "Merge $LOCAL_BRANCH into nightly" || echo "Nothing to merge; nightly up to date"
                 git push origin nightly
 
             - name: "Merge Corretto-21 develop to lilliput"
