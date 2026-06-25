@@ -31,6 +31,7 @@ class CompileTask;
 class DepChange;
 class DirectiveSet;
 class DebugInformationRecorder;
+class ICacheInvalidationContext;
 class JvmtiThreadState;
 class OopIterateClosure;
 
@@ -503,12 +504,12 @@ class nmethod : public CompiledMethod {
 
   // Relocation support
 private:
-  void fix_oop_relocations(address begin, address end, bool initialize_immediates);
+  bool fix_oop_relocations(bool initialize_immediates);
   inline void initialize_immediate_oop(oop* dest, jobject handle);
 
 public:
-  void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
-  void fix_oop_relocations()                           { fix_oop_relocations(nullptr, nullptr, false); }
+  void fix_oop_relocations(ICacheInvalidationContext* icic);
+  void fix_oop_relocations();
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
