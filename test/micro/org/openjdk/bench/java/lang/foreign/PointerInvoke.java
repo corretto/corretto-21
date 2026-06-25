@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "--enable-preview", "-Djava.library.path=micro/native" })
 public class PointerInvoke extends CLayouts {
 
     Arena arena = Arena.ofConfined();

@@ -78,6 +78,11 @@
 #define REG_FP 29
 #define REG_LR 30
 
+// IC IVAU trap probe.
+// Defined in ic_ivau_probe_linux_aarch64.S.
+extern "C" char _ic_ivau_probe_fault[] __attribute__ ((visibility ("hidden")));
+extern "C" char _ic_ivau_probe_continuation[] __attribute__ ((visibility ("hidden")));
+
 NOINLINE address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);
 }
@@ -220,6 +225,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           return true; // continue
         }
       }
+    }
+
+    // IC IVAU trap probe during VM_Version initialization.
+    // If IC IVAU is not trapped, it faults on unmapped VA 0x0.
+    if (sig == SIGSEGV && pc == (address)_ic_ivau_probe_fault) {
+      stub = (address)_ic_ivau_probe_continuation;
     }
 
     if (thread->thread_state() == _thread_in_Java) {
