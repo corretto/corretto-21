@@ -24,7 +24,7 @@ The following issues are addressed in 21.0.12.9.1:
 
 | Issue Name | Platform | Description | Link |
 |------------|----------|-------------|------|
-| Import jdk-21.0.12.9.1 | All | Updates Corretto baseline to OpenJDK 21.0.12.9.1 | [jdk-21.0.12.9.1](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.12.9.1) |
+| Import jdk-21.0.12.1+1 | All | Updates Corretto baseline to OpenJDK 21.0.12.1+1 | [jdk-21.0.12.1+1](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.12.1+1) |
 
 The following CVEs are addressed in 21.0.12.9.1:
 
