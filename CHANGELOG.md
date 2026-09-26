@@ -2,6 +2,32 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.12.12.1
+Release Date: September 25, 2026
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
++ Windows 11 or later, x86_64
++ macos 14.0 and later, x86_64
++ macos 14.0 and later, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto)
+in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.12.12.1:
+
+| Issue Name | Platform | Description | Link |
+|------------|----------|-------------|------|
+| JDK-8388214 | All | (tz) Update Timezone Data to 2026c | Main: [JDK-8388214](https://bugs.openjdk.org/browse/JDK-8388214)<br>&nbsp;<br>Related: [8380223](https://bugs.openjdk.org/browse/JDK-8380223), [8381379](https://bugs.openjdk.org/browse/JDK-8381379), [8390388](https://bugs.openjdk.org/browse/JDK-8390388), [8390380](https://bugs.openjdk.org/browse/JDK-8390380), [8391256](https://bugs.openjdk.org/browse/JDK-8391256) |
+| JDK-8392377 | All | (tz) Update Timezone Data to 2026d | Main: [JDK-8392377](https://bugs.openjdk.org/browse/JDK-8392377)<br>&nbsp;<br>Related: [8392519](https://bugs.openjdk.org/browse/JDK-8392519) |
+| /usr/libexec/java_home -V on macOS doesn't print patch version | macOS | Fix macos info.plist version string metadata [PR](https://github.com/corretto/corretto-21/pull/165) | [Issue](https://github.com/corretto/corretto-25/issues/76) |
+
 ## Corretto version: 21.0.12.9.1
 Release Date: August 18, 2026
 
