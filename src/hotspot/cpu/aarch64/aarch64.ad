@@ -4679,20 +4679,6 @@ operand immP_1()
   interface(CONST_INTER);
 %}
 
-// Card Table Byte Map Base
-operand immByteMapBase()
-%{
-  // Get base of card map
-  predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
-            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
-            (CardTable::CardValue*)n->get_ptr() == ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate Minus One
 // this is used when we want to write the current PC to the thread anchor
 operand immP_M1()
