@@ -3463,11 +3463,6 @@ encode %{
     __ mov(dst_reg, (uint64_t)1);
   %}
 
-  enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
-    C2_MacroAssembler _masm(&cbuf);
-    __ load_byte_map_base($dst$$Register);
-  %}
-
   enc_class aarch64_enc_mov_n(iRegN dst, immN src) %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
@@ -7247,20 +7242,6 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   format %{ "mov  $dst, $con\t# NULL ptr" %}
 
   ins_encode(aarch64_enc_mov_p1(dst, con));
-
-  ins_pipe(ialu_imm);
-%}
-
-// Load Byte Map Base Constant
-
-instruct loadByteMapBase(iRegPNoSp dst, immByteMapBase con)
-%{
-  match(Set dst con);
-
-  ins_cost(INSN_COST);
-  format %{ "adr  $dst, $con\t# Byte Map Base" %}
-
-  ins_encode(aarch64_enc_mov_byte_map_base(dst, con));
 
   ins_pipe(ialu_imm);
 %}
