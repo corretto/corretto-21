@@ -329,6 +329,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t max_size,
                                    const char* policy)
   : Generation(rs, initial_size),
+    _promotion_failed(false),
     _promo_failure_drain_in_progress(false),
     _should_allocate_from_space(false),
     _string_dedup_requests()

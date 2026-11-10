@@ -6106,6 +6106,10 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   return agent_entry_name;
 }
 
+void os::print_open_file_descriptors(outputStream* st) {
+  // File descriptor counting not supported on Windows.
+}
+
 /*
   All the defined signal names for Windows.
 
