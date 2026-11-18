@@ -2,6 +2,47 @@
 
 The following sections describe the changes for each release of Amazon Corretto 21.
 
+## Corretto version: 21.0.13.1.2
+Release Date: November 17, 2026
+
+**Target Platforms <sup>1</sup>**
+
++ RPM-based Linux using glibc 2.12 or later, x86_64
++ Debian-based Linux using glibc 2.12 or later, x86_64
++ RPM-based Linux using glibc 2.17 or later, aarch64
++ Debian-based Linux using glibc 2.17 or later, aarch64
++ Alpine-based Linux, x86_64
++ Alpine-based Linux, aarch64
++ Windows 11 or later, x86_64
++ macOS 15.0 and later, x86_64
++ macOS 15.0 and later, aarch64
+
+**1.** This is the platform targeted by the build. See [Using Amazon Corretto](https://aws.amazon.com/corretto/faqs/#Using_Amazon_Corretto)
+in the Amazon Corretto FAQ for supported platforms
+
+The following issues are addressed in 21.0.13.1.2:
+
+| Issue Name | Platform | Description | Link |
+|------------|----------|-------------|------|
+| Import jdk-21.0.13.1+2 | All | Updates Corretto baseline to OpenJDK 21.0.13.1+2 | [jdk-21.0.13.1+2](https://github.com/openjdk/jdk21u/releases/tag/jdk-21.0.13.1+2) |
+| JDK-8396048 | All | (tz) Update to tzdata2026f | [JDK-8396048](https://bugs.openjdk.org/browse/JDK-8396048) |
+| JDK-8361892 | aarch64 | AArch64: Incorrect matching rule leading to improper oop instruction encoding | [JDK-8361892](https://bugs.openjdk.org/browse/JDK-8361892) |
+| Remove emSign C1 and C3 roots from amazon-cacerts | All | Remove emSign C1 and C3 roots from amazon-cacerts | [#181](https://github.com/corretto/corretto-21/pull/181) |
+
+The following CVEs are addressed in 21.0.13.1.2:
+
+| CVE | CVSS | Component |
+|-----|------|-----------|
+| CVE-2026-114938 | 8.1 | hotspot/compiler |
+| CVE-2026-114939 | 7.4 | security-libs/org.ietf.jgss |
+| CVE-2026-114940 | 7.4 | security-libs/javax.net.ssl |
+| CVE-2026-114941 | 7.0 | hotspot/compiler |
+| CVE-2026-114942 | 7.0 | core-libs |
+| CVE-2026-114943 | 6.5 | hotspot/runtime |
+| CVE-2026-114944 | 5.9 | core-svc/java.lang.management |
+| CVE-2026-114945 | 5.3 | core-libs/java.lang |
+| CVE-2026-114946 | 4.8 | hotspot/compiler |
+
 ## Corretto version: 21.0.13.0.11
 Release Date: October 24, 2026
 
@@ -62,13 +103,14 @@ The following CVEs are addressed in 21.0.13.0.10:
 
 | CVE | CVSS | Component |
 |-----|------|-----------|
-| CVE-2026-91403 | 9.1 | security-libs/javax.net.ssl |
+| CVE-2026-91403 | 9.1 | security-libs/java.security |
 | CVE-2026-91415 | 7.0 | client-libs/2d |
 | CVE-2026-91398 | 6.8 | core-libs/java.net |
 | CVE-2026-91382 | 6.5 | client-libs/2d |
 | CVE-2026-91411 | 6.5 | security-libs/org.ietf.jgss |
 | CVE-2026-87294 | 6.5 | security-libs/java.security |
 | CVE-2026-83395 | 6.5 | core-libs/java.net |
+| CVE-2026-101516 | 6.5 | security-libs/java.security |
 | CVE-2026-91394 | 5.9 | core-libs/java.net |
 | CVE-2026-83387 | 5.9 | core-libs/java.sql |
 | CVE-2026-91462 | 5.9 | security-libs/org.ietf.jgss |
