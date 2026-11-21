@@ -30,9 +30,9 @@ jobs:
                 git config user.name "corretto-github-robot"
 
             - name: "Merge openjdk/jdk:master to the corretto-21:develop"
-              run: |
-                git fetch $UPSTREAM_REMOTE master || exit 1
-                git merge -m "Merge upstream-jdk" FETCH_HEAD
+              id: merge
+              shell: bash
+              run: bash ./.github/scripts/merge-upstream.sh "$UPSTREAM_REMOTE" master "Merge upstream-jdk"
 
             - name: "Update Corretto version"
               shell: bash
@@ -93,3 +93,11 @@ jobs:
                 git commit -m "Automerged version.txt from $LOCAL_BRANCH to $LOCAL_SHENANDOAH" || true
                 git merge origin/$LOCAL_BRANCH
                 git push origin $LOCAL_SHENANDOAH
+
+            - name: "Fail on upstream merge conflict"
+              if: steps.merge.outputs.conflict == 'true'
+              env:
+                CONFLICT_COMMIT: ${{ steps.merge.outputs.conflict_commit }}
+              run: |
+                echo "Upstream commit $CONFLICT_COMMIT needs a manual merge. See the job summary."
+                exit 1
